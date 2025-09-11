@@ -6,7 +6,7 @@ dotenv.config();
 export default {
   schema: './src/lib/db/schema.ts',
   out: './drizzle',
-  driver: 'vercel-postgres',
+  dialect: 'postgresql',
   dbCredentials: {
     url: process.env.POSTGRES_URL!,
   },
