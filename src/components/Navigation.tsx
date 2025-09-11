@@ -60,7 +60,7 @@ export default function Navigation() {
           <Popover.Group className="hidden lg:flex lg:gap-x-12">
             {/* Categories dropdown */}
             <Popover className="relative">
-              {({ open }) => (
+              {() => (
                 <>
                   <Popover.Button className="flex items-center gap-x-1 text-sm font-semibold leading-6 text-gray-900">
                     Products

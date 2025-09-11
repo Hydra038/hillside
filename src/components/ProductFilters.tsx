@@ -3,7 +3,7 @@
 import { Fragment, useState } from 'react';
 import { Dialog, Disclosure, Menu, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import { ChevronDownIcon, FunnelIcon } from '@heroicons/react/20/solid';
+import { ChevronDownIcon } from '@heroicons/react/20/solid';
 import { Product } from '@/types/product';
 
 const sortOptions = [
