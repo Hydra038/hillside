@@ -9,50 +9,26 @@ import ProductFilters from '@/components/ProductFilters';
 // Sample products data (will be replaced with API call)
 const products: Product[] = [
   {
-    id: '1',
+    id: 1,
     name: 'Premium Hardwood Logs',
     description: 'High-quality, seasoned hardwood logs perfect for long-lasting heat.',
-    price: 120,
+    price: '120.00',
     category: 'hardwood',
     imageUrl: '/images/products/hardwood-logs.jpg',
     stockQuantity: 100,
-    weight: 25,
-    dimensions: {
-      length: 25,
-      width: 10,
-      height: 10,
-    },
-    moisture: 20,
-    season: 'all',
-    features: [
-      'Long burning time',
-      'High heat output',
-      'Low moisture content',
-      'Minimal smoke',
-    ],
+    isFeatured: false,
+    createdAt: new Date(),
   },
   {
-    id: '2',
+    id: 2,
     name: 'Softwood Kindling',
     description: 'Dry, easy-to-light kindling perfect for starting your fire.',
-    price: 45,
+    price: '45.00',
     category: 'kindling',
     imageUrl: '/images/products/kindling.jpg',
     stockQuantity: 150,
-    weight: 10,
-    dimensions: {
-      length: 15,
-      width: 2,
-      height: 2,
-    },
-    moisture: 15,
-    season: 'all',
-    features: [
-      'Easy to light',
-      'Quick burning',
-      'Perfect for starting fires',
-      'Conveniently sized',
-    ],
+    isFeatured: false,
+    createdAt: new Date(),
   },
   // Add more products here
 ];
@@ -72,7 +48,7 @@ export default function ProductsPage() {
             <Link key={product.id} href={`/products/${product.id}`} className="group">
               <div className="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-lg bg-gray-200">
                 <Image
-                  src={product.imageUrl}
+                  src={product.imageUrl || '/images/products/placeholder.jpg'}
                   alt={product.name}
                   width={500}
                   height={500}
@@ -80,7 +56,7 @@ export default function ProductsPage() {
                 />
               </div>
               <h3 className="mt-4 text-sm text-gray-700">{product.name}</h3>
-              <p className="mt-1 text-lg font-medium text-gray-900">£{product.price.toFixed(2)}</p>
+              <p className="mt-1 text-lg font-medium text-gray-900">£{Number(product.price).toFixed(2)}</p>
             </Link>
           ))}
         </div>

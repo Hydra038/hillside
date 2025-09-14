@@ -1,18 +1,12 @@
-export type Product = {
-  id: string;
+export interface Product {
+  id: number;
   name: string;
   description: string;
-  price: number;
-  category: 'hardwood' | 'softwood' | 'kindling';
-  imageUrl: string;
-  stockQuantity: number;
-  weight: number; // in kg
-  dimensions: {
-    length: number; // in cm
-    width: number; // in cm
-    height: number; // in cm
-  };
-  moisture: number; // percentage
-  season: 'spring' | 'summer' | 'autumn' | 'winter' | 'all';
-  features: string[];
-};
+  price: string;
+  imageUrl?: string;
+  category?: string;
+  stockQuantity?: number;
+  isFeatured?: boolean;
+  createdAt: Date;
+  // removed updatedAt, weight, dimensions, moisture, season, features
+}

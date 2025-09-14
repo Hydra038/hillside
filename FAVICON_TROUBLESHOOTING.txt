@@ -1,0 +1,32 @@
+# Favicon Fix Instructions
+========================
+
+The favicon has been updated with a custom firewood design, but browsers cache favicons aggressively. Here's how to see the new icon:
+
+## IMMEDIATE SOLUTIONS:
+1. **Hard Refresh**: Press Ctrl+F5 (Windows) or Cmd+Shift+R (Mac)
+2. **Clear Browser Cache**: 
+   - Chrome: Settings > Privacy > Clear browsing data > Cached images
+   - Firefox: Settings > Privacy > Clear Data > Cached content
+3. **Private/Incognito Window**: Open the site in a private window
+4. **Different Browser**: Try a different browser to see the new icon
+
+## FAVICON FILES CREATED:
+- ✅ /src/app/icon.svg (Next.js auto-pickup)
+- ✅ /public/favicon.svg (modern browsers)
+- ✅ /public/favicon.ico (fallback)
+- ✅ /public/apple-touch-icon.svg (iOS)
+
+## TROUBLESHOOTING:
+If the icon still doesn't show:
+1. Check browser dev tools > Network tab for favicon requests
+2. Manually visit: http://localhost:3001/favicon.svg
+3. Wait a few minutes - some browsers take time to update
+
+## DESIGN:
+🪵 Stack of brown logs
+🔥 Orange/yellow flames on top  
+🎨 Wood brown background (#8B4513)
+📱 Works on all devices and sizes
+
+The new favicon represents your firewood business perfectly!

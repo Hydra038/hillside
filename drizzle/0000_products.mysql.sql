@@ -1,0 +1,16 @@
+CREATE TABLE IF NOT EXISTS products (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  description TEXT NOT NULL,
+  price DECIMAL(10,2) NOT NULL,
+  category VARCHAR(255) NOT NULL,
+  image_url VARCHAR(255),
+  stock_quantity INT NOT NULL DEFAULT 0,
+  weight DECIMAL(10,2),
+  dimensions JSON,
+  moisture DECIMAL(5,2),
+  season VARCHAR(255),
+  features JSON,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

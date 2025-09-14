@@ -1,198 +1,260 @@
-'use client';
+'use client'
 
-import { Fragment, useState } from 'react';
-import { Dialog, Popover, Transition } from '@headlessui/react';
-import {
-  Bars3Icon,
-  ShoppingCartIcon,
-  UserIcon,
-  XMarkIcon,
-} from '@heroicons/react/24/outline';
-import Link from 'next/link';
-
-const navigation = {
-  categories: [
-    {
-      name: 'Products',
-      featured: [
-        { name: 'Hardwood Logs', href: '/products/hardwood' },
-        { name: 'Softwood Logs', href: '/products/softwood' },
-        { name: 'Kindling', href: '/products/kindling' },
-        { name: 'Special Offers', href: '/products/special-offers' },
-      ],
-    },
-  ],
-  pages: [
-    { name: 'About', href: '/about' },
-    { name: 'Delivery', href: '/delivery' },
-    { name: 'Contact', href: '/contact' },
-  ],
-};
+import Link from 'next/link'
+import { useState } from 'react'
+import { usePathname } from 'next/navigation'
+import Logo from './Logo'
+import Cart from './Cart'
+import { useCartStore } from '@/lib/stores/cart-store'
+import { useAuth } from '@/lib/auth-provider'
 
 export default function Navigation() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isCartOpen, setIsCartOpen] = useState(false)
+  const { items } = useCartStore()
+  const { user, signOut } = useAuth()
+  const pathname = usePathname()
+  
+  const cartItemCount = items.reduce((total, item) => total + item.quantity, 0)
+  
+  // Hide regular user menu items and account links on admin pages
+  const isAdminPage = pathname?.startsWith('/admin')
+  const showRegularNavItems = !isAdminPage
+
+  // Function to determine if a link is active
+  const isActiveLink = (href: string) => {
+    if (href === '/' && pathname === '/') return true
+    if (href !== '/' && pathname?.startsWith(href)) return true
+    return false
+  }
+
+  // Get mobile link classes based on active state
+  const getMobileLinkClasses = (href: string) => {
+    const baseClasses = "block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+    if (isActiveLink(href)) {
+      return `${baseClasses} text-amber-600 bg-amber-50 font-semibold`
+    }
+    return `${baseClasses} text-gray-700 hover:text-amber-600 hover:bg-gray-50`
+  }
+
+  // Get desktop link classes based on active state
+  const getLinkClasses = (href: string) => {
+    const baseClasses = "transition-colors duration-200"
+    if (isActiveLink(href)) {
+      return `${baseClasses} text-amber-600 font-semibold border-b-2 border-amber-600 pb-1`
+    }
+    return `${baseClasses} text-gray-700 hover:text-amber-600 hover:border-b-2 hover:border-amber-300 pb-1`
+  }
+
+  const handleSignOut = async () => {
+    try {
+      await signOut()
+      window.location.href = '/'
+    } catch (error) {
+      console.error('Sign out error:', error)
+    }
+  }
 
   return (
-    <header className="bg-white">
-      <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
+    <nav className="bg-white shadow-md">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <div className="flex lg:flex-1">
-            <Link href="/" className="-m-1.5 p-1.5">
-              <span className="sr-only">Firewood E-commerce</span>
-              <span className="text-2xl font-bold text-green-700">FirewoodSite</span>
-            </Link>
+          <Link href="/" className="flex items-center">
+            <Logo />
+          </Link>
+
+          {/* Main Navigation */}
+          {showRegularNavItems && (
+            <div className="hidden md:flex space-x-8">
+              <Link href="/shop" className={getLinkClasses('/shop')}>
+                Shop
+              </Link>
+              <Link href="/about" className={getLinkClasses('/about')}>
+                About
+              </Link>
+              <Link href="/delivery" className={getLinkClasses('/delivery')}>
+                Delivery
+              </Link>
+              <Link href="/contact" className={getLinkClasses('/contact')}>
+                Contact
+              </Link>
+            </div>
+          )}
+
+          {/* User Actions */}
+          <div className="hidden md:flex items-center space-x-4">
+            {showRegularNavItems && (
+              <button 
+                onClick={() => setIsCartOpen(true)} 
+                className="relative text-gray-700 hover:text-amber-600 flex items-center space-x-2 bg-gray-50 hover:bg-amber-50 px-3 py-2 rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 1.5M7 13l1.5 1.5M13 13v6a2 2 0 01-2 2H9a2 2 0 01-2 2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01" />
+                </svg>
+                <span className="font-medium">Cart</span>
+                {cartItemCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-amber-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                    {cartItemCount}
+                  </span>
+                )}
+              </button>
+            )}
+            
+            {user ? (
+              <div className="flex items-center space-x-4">
+                <span className="flex items-center gap-2 text-lg font-semibold text-amber-700 bg-amber-50 px-4 py-2 rounded-full shadow-sm border border-amber-200">
+                  <svg className="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.657 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  Welcome, {user.name}!
+                </span>
+                {/* Hide My Account link on admin pages */}
+                {!isAdminPage && (
+                  <Link 
+                    href="/account" 
+                    className="text-amber-600 hover:text-amber-700 font-medium px-3 py-2 rounded-lg bg-amber-100 hover:bg-amber-200 transition"
+                  >
+                    My Account
+                  </Link>
+                )}
+                {user.role === 'admin' && (
+                  <Link 
+                    href="/admin" 
+                    className="text-purple-600 hover:text-purple-700 font-medium px-3 py-2 rounded-lg bg-purple-100 hover:bg-purple-200 transition"
+                  >
+                    Admin
+                  </Link>
+                )}
+                <button 
+                  onClick={handleSignOut}
+                  className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-700 text-white px-5 py-2 rounded-full shadow hover:scale-105 hover:from-amber-600 hover:to-amber-800 transition-all font-semibold border-2 border-amber-300"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" /></svg>
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <Link 
+                href="/signin" 
+                className="bg-amber-600 text-white px-4 py-2 rounded hover:bg-amber-700 transition-colors"
+              >
+                Sign In
+              </Link>
+            )}
           </div>
+          {showRegularNavItems && <Cart isOpen={isCartOpen} setIsOpen={setIsCartOpen} />}
 
           {/* Mobile menu button */}
-          <div className="flex lg:hidden">
+          <div className="md:hidden">
             <button
-              type="button"
-              className="-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-gray-700"
-              onClick={() => setMobileMenuOpen(true)}
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-amber-600 hover:bg-gray-100"
             >
-              <span className="sr-only">Open main menu</span>
-              <Bars3Icon className="h-6 w-6" aria-hidden="true" />
-            </button>
-          </div>
-
-          {/* Desktop navigation */}
-          <Popover.Group className="hidden lg:flex lg:gap-x-12">
-            {/* Categories dropdown */}
-            <Popover className="relative">
-              {() => (
-                <>
-                  <Popover.Button className="flex items-center gap-x-1 text-sm font-semibold leading-6 text-gray-900">
-                    Products
-                  </Popover.Button>
-
-                  <Transition
-                    as={Fragment}
-                    enter="transition ease-out duration-200"
-                    enterFrom="opacity-0 translate-y-1"
-                    enterTo="opacity-100 translate-y-0"
-                    leave="transition ease-in duration-150"
-                    leaveFrom="opacity-100 translate-y-0"
-                    leaveTo="opacity-0 translate-y-1"
-                  >
-                    <Popover.Panel className="absolute -left-8 top-full z-10 mt-3 w-screen max-w-md overflow-hidden rounded-3xl bg-white shadow-lg ring-1 ring-gray-900/5">
-                      <div className="p-4">
-                        {navigation.categories[0].featured.map((item) => (
-                          <div
-                            key={item.name}
-                            className="group relative flex items-center gap-x-6 rounded-lg p-4 text-sm leading-6 hover:bg-gray-50"
-                          >
-                            <div className="flex-auto">
-                              <Link
-                                href={item.href}
-                                className="block font-semibold text-gray-900"
-                              >
-                                {item.name}
-                                <span className="absolute inset-0" />
-                              </Link>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </Popover.Panel>
-                  </Transition>
-                </>
-              )}
-            </Popover>
-
-            {/* Regular pages */}
-            {navigation.pages.map((page) => (
-              <Link
-                key={page.name}
-                href={page.href}
-                className="text-sm font-semibold leading-6 text-gray-900"
+              <span className="sr-only">Open menu</span>
+              {/* Hamburger icon */}
+              <svg
+                className="h-6 w-6"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
               >
-                {page.name}
-              </Link>
-            ))}
-          </Popover.Group>
-
-          {/* Desktop right section */}
-          <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:gap-x-6">
-            <Link 
-              href="/cart" 
-              className="flex items-center text-sm font-semibold leading-6 text-gray-900"
-            >
-              <ShoppingCartIcon className="h-6 w-6 mr-1" />
-              Cart
-            </Link>
-            <Link
-              href="/account"
-              className="flex items-center text-sm font-semibold leading-6 text-gray-900"
-            >
-              <UserIcon className="h-6 w-6 mr-1" />
-              Account
-            </Link>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d={isMenuOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'}
+                />
+              </svg>
+            </button>
           </div>
         </div>
-      </nav>
 
-      {/* Mobile menu */}
-      <Dialog as="div" className="lg:hidden" open={mobileMenuOpen} onClose={setMobileMenuOpen}>
-        <div className="fixed inset-0 z-10" />
-        <Dialog.Panel className="fixed inset-y-0 right-0 z-10 w-full overflow-y-auto bg-white px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="-m-1.5 p-1.5">
-              <span className="sr-only">Firewood E-commerce</span>
-              <span className="text-2xl font-bold text-green-700">FirewoodSite</span>
-            </Link>
-            <button
-              type="button"
-              className="-m-2.5 rounded-md p-2.5 text-gray-700"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <span className="sr-only">Close menu</span>
-              <XMarkIcon className="h-6 w-6" aria-hidden="true" />
-            </button>
-          </div>
-          <div className="mt-6 flow-root">
-            <div className="-my-6 divide-y divide-gray-500/10">
-              <div className="space-y-2 py-6">
-                {/* Mobile products menu */}
-                {navigation.categories[0].featured.map((item) => (
+        {/* Mobile menu */}
+        {isMenuOpen && (
+          <div className="md:hidden">
+            <div className="px-2 pt-2 pb-3 space-y-1">
+              {showRegularNavItems && (
+                <>
                   <Link
-                    key={item.name}
-                    href={item.href}
-                    className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
+                    href="/shop"
+                    className={getMobileLinkClasses('/shop')}
                   >
-                    {item.name}
+                    Shop
                   </Link>
-                ))}
-                {/* Mobile pages menu */}
-                {navigation.pages.map((page) => (
                   <Link
-                    key={page.name}
-                    href={page.href}
-                    className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
+                    href="/about"
+                    className={getMobileLinkClasses('/about')}
                   >
-                    {page.name}
+                    About
                   </Link>
-                ))}
-              </div>
-              {/* Mobile user actions */}
-              <div className="py-6">
+                  <Link
+                    href="/delivery"
+                    className={getMobileLinkClasses('/delivery')}
+                  >
+                    Delivery
+                  </Link>
+                  <Link
+                    href="/contact"
+                    className={getMobileLinkClasses('/contact')}
+                  >
+                    Contact
+                  </Link>
+                  <button
+                    onClick={() => setIsCartOpen(true)}
+                    className="flex w-full items-center space-x-3 px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-amber-600 hover:bg-gray-50"
+                  >
+                    <div className="relative">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 1.5M7 13l1.5 1.5M13 13v6a2 2 0 01-2 2H9a2 2 0 01-2 2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01" />
+                      </svg>
+                      {cartItemCount > 0 && (
+                        <span className="absolute -top-2 -right-2 bg-amber-600 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-bold">
+                          {cartItemCount}
+                        </span>
+                      )}
+                    </div>
+                    <span>Shopping Cart</span>
+                  </button>
+                </>
+              )}
+              {user ? (
+                <>
+                  <div className="px-3 py-2 text-base font-medium text-gray-700">
+                    Welcome, {user.name}!
+                  </div>
+                  <Link
+                    href="/account"
+                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-amber-600 hover:bg-gray-50"
+                  >
+                    My Account
+                  </Link>
+                  {user.role === 'admin' && (
+                    <Link
+                      href="/admin"
+                      className="block px-3 py-2 rounded-md text-base font-medium text-purple-600 hover:text-purple-700 hover:bg-gray-50"
+                    >
+                      Admin
+                    </Link>
+                  )}
+                  <button
+                    onClick={handleSignOut}
+                    className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-amber-600 hover:bg-gray-50"
+                  >
+                    Sign Out
+                  </button>
+                </>
+              ) : (
                 <Link
-                  href="/cart"
-                  className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
+                  href="/signin"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-amber-600 hover:bg-gray-50"
                 >
-                  Cart
+                  Sign In
                 </Link>
-                <Link
-                  href="/account"
-                  className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
-                >
-                  Account
-                </Link>
-              </div>
+              )}
             </div>
           </div>
-        </Dialog.Panel>
-      </Dialog>
-    </header>
-  );
+        )}
+      </div>
+    </nav>
+  )
 }
