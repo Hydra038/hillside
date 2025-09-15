@@ -1,0 +1,14 @@
+{
+  "name": "firewood-ecommerce-static",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build-static": "next build",
+    "export": "next build && next export"
+  },
+  "dependencies": {
+    "next": "15.5.3",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  }
+}
