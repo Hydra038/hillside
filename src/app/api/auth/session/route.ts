@@ -5,9 +5,12 @@ import { db } from '@/lib/db'
 import { users } from '@/lib/db/schema.mysql'
 import { eq } from 'drizzle-orm'
 
-const JWT_SECRET = process.env.JWT_SECRET
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is not set')
+function getJWTSecret() {
+  const JWT_SECRET = process.env.JWT_SECRET;
+  if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET environment variable is not set');
+  }
+  return JWT_SECRET;
 }
 
 export async function GET() {
@@ -19,10 +22,8 @@ export async function GET() {
       return NextResponse.json({ user: null })
     }
 
-    // Verify token
-    if (!JWT_SECRET) {
-      return NextResponse.json({ user: null, error: 'JWT_SECRET not set' })
-    }
+    // Verify token  
+    const JWT_SECRET = getJWTSecret();
     const decoded = jwt.verify(token, JWT_SECRET) as unknown as {
       userId: string
       email: string
