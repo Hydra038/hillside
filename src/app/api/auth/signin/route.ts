@@ -6,12 +6,9 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
 
-function getJWTSecret() {
-  const JWT_SECRET = process.env.JWT_SECRET;
-  if (!JWT_SECRET) {
-    throw new Error('JWT_SECRET is not defined');
-  }
-  return JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET as string;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET is not defined');
 }
 
 export async function POST(request: Request) {
@@ -82,7 +79,7 @@ export async function POST(request: Request) {
         email: user.email,
         role: user.role
       },
-      getJWTSecret(),
+      JWT_SECRET,
       { expiresIn: '24h' }
     );
 

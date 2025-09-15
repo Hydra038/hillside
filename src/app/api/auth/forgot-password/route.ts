@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     const expires = new Date(Date.now() + RESET_TOKEN_EXPIRY_MINUTES * 60 * 1000);
     // Store token and expiry in DB (add columns if needed)
     await db.update(users)
-      .set({ resetToken: token, resetTokenExpires: expires })
+      .set({ reset_token: token, reset_token_expires: expires })
       .where(eq(users.id, user.id));
     // Send email (mock)
     console.log(`Password reset link for ${email}: ${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/reset-password?token=${token}`);

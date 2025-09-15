@@ -1,18 +1,25 @@
-import { neon } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/mysql2';
+import mysql from 'mysql2/promise';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
 
 async function testConnection() {
-  console.log('Testing database connection...');
+  console.log('Testing MySQL database connection...');
   console.log('Database URL:', process.env.DATABASE_URL?.replace(/\/\/.*:.*@/, '//<credentials>@'));
   
   try {
-    const sql = neon(process.env.DATABASE_URL!);
+    // Create connection
+    const connection = await mysql.createConnection(process.env.DATABASE_URL!);
     console.log('Attempting to connect...');
-    const result = await sql`SELECT version();`;
+    
+    // Test query
+    const [result] = await connection.execute('SELECT VERSION() as version');
     console.log('Connection successful!');
-    console.log('PostgreSQL version:', result[0].version);
+    console.log('MySQL version:', (result as any)[0].version);
+    
+    // Close connection
+    await connection.end();
   } catch (error) {
     console.error('Connection failed:', error);
     if (error instanceof Error) {

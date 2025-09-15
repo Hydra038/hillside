@@ -5,13 +5,7 @@ import { db } from '@/lib/db'
 import { users } from '@/lib/db/schema.mysql'
 import { eq } from 'drizzle-orm'
 
-function getJWTSecret() {
-  const JWT_SECRET = process.env.JWT_SECRET;
-  if (!JWT_SECRET) {
-    throw new Error('JWT_SECRET environment variable is not set');
-  }
-  return JWT_SECRET;
-}
+const JWT_SECRET = process.env.JWT_SECRET as string
 
 export async function PUT(request: Request) {
   try {
@@ -27,7 +21,7 @@ export async function PUT(request: Request) {
     }
 
     // Verify token
-    const decoded = jwt.verify(token, getJWTSecret()) as {
+    const decoded = jwt.verify(token, JWT_SECRET) as {
       userId: string
       email: string
       role: string
@@ -86,7 +80,7 @@ export async function PUT(request: Request) {
           email: email,
           role: decoded.role
         },
-        getJWTSecret(),
+        JWT_SECRET,
         { expiresIn: '24h' }
       )
     }

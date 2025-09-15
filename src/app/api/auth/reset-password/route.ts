@@ -11,20 +11,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Token and new password are required.' }, { status: 400 });
     }
     // Find user by reset token
-    const userResults = await db.select().from(users).where(eq(users.resetToken, token));
+    const userResults = await db.select().from(users).where(eq(users.reset_token, token));
     if (!userResults.length) {
       return NextResponse.json({ error: 'Invalid or expired reset token.' }, { status: 400 });
     }
     const user = userResults[0];
     // Check expiry
-    if (user.resetTokenExpires && new Date(user.resetTokenExpires) < new Date()) {
+    if (user.reset_token_expires && new Date(user.reset_token_expires) < new Date()) {
       return NextResponse.json({ error: 'Reset token has expired.' }, { status: 400 });
     }
     // Hash new password
     const hashed = await bcrypt.hash(password, 10);
     // Update user password and clear reset token
     await db.update(users)
-      .set({ password: hashed, resetToken: null, resetTokenExpires: null })
+      .set({ password: hashed, reset_token: null, reset_token_expires: null })
       .where(eq(users.id, user.id));
     return NextResponse.json({ success: true });
   } catch (error) {

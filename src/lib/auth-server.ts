@@ -4,12 +4,9 @@ import { db } from './db/index';
 import { users } from './db/schema.mysql';
 import { eq } from 'drizzle-orm';
 
-function getJWTSecret() {
-  const JWT_SECRET = process.env.JWT_SECRET;
-  if (!JWT_SECRET) {
-    throw new Error('JWT_SECRET environment variable is not set');
-  }
-  return JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is not set');
 }
 
 export async function getUserFromSession() {
@@ -17,8 +14,7 @@ export async function getUserFromSession() {
   const token = (await cookieStore).get('token')?.value;
   if (!token) return null;
   try {
-    const JWT_SECRET = getJWTSecret();
-    const decoded = jwt.verify(token, JWT_SECRET);
+  const decoded = jwt.verify(token, JWT_SECRET as string);
     if (
       typeof decoded === 'object' &&
       decoded !== null &&

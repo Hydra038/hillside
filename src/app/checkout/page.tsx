@@ -32,14 +32,7 @@ export default function CheckoutPage() {
 			}));
 		}
 	}, [user]);
-	type PaymentMethod = { 
-		id: string; 
-		display_name?: string; 
-		type?: string; 
-		config?: any;
-		description?: string;
-		enabled?: number;
-	};
+	type PaymentMethod = { id: string; display_name?: string; type?: string };
 	const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
 	const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
 	const [error, setError] = useState("");

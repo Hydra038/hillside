@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from 'react';
-import { toZonedTime, format } from 'date-fns-tz';
+import { utcToZonedTime, format } from 'date-fns-tz';
 import { useAuth } from '@/lib/auth-provider';
 
 interface SupportMessage {
@@ -71,7 +71,7 @@ export default function SupportChat() {
               <div className={`px-3 py-2 rounded-lg max-w-xs ${msg.sender === 'user' ? 'bg-amber-200 text-right' : 'bg-gray-200 text-left'}`}>
                 <div className="text-sm">{msg.message}</div>
                 <div className="text-xs text-gray-500 mt-1">
-                  {format(toZonedTime(new Date(msg.created_at), 'Europe/London'), 'dd MMM yyyy HH:mm', { timeZone: 'Europe/London' })}
+                  {format(utcToZonedTime(new Date(msg.created_at), 'Europe/London'), 'dd MMM yyyy HH:mm', { timeZone: 'Europe/London' })}
                 </div>
               </div>
             </div>

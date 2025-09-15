@@ -192,18 +192,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
           const emailHtml = generateShippingNotificationEmailHtml(emailData);
           
-          // Ensure we have a valid email address
-          if (order.userEmail) {
-            await sendEmail({
-              to: order.userEmail,
-              subject: '🚚 Your Firewood Order Has Shipped! - Firewood Logs Fuel',
-              html: emailHtml
-            });
+          await sendEmail({
+            to: order.userEmail,
+            subject: '🚚 Your Firewood Order Has Shipped! - Hillside Logs Fuel',
+            html: emailHtml
+          });
 
-            console.log(`✅ Shipping notification email sent to ${order.userEmail} for order ${id}`);
-          } else {
-            console.warn(`⚠️ No email address found for order ${id}, shipping notification not sent`);
-          }
+          console.log(`✅ Shipping notification email sent to ${order.userEmail} for order ${id}`);
         }
       } catch (emailError) {
         console.error('❌ Failed to send shipping notification email:', emailError);
