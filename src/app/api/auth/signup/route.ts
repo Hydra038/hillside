@@ -4,6 +4,7 @@ import { users } from '@/lib/db/schema.mysql'
 import { eq } from 'drizzle-orm'
 import { randomUUID } from 'crypto'
 import bcrypt from 'bcryptjs'
+import { sendEmail, generateVerificationEmailHtml } from '@/lib/send-email'
 
 export async function POST(request: Request) {
   try {
@@ -36,6 +37,10 @@ export async function POST(request: Request) {
     console.log('Hashing password...')
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Generate email verification token
+    const verificationToken = randomUUID();
+    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
     // Create user using drizzle ORM
     console.log('Creating new user...')
     const userId = randomUUID();
@@ -46,16 +51,39 @@ export async function POST(request: Request) {
       email,
       password: hashedPassword,
       role: 'user',
+      emailVerified: 0,
+      emailVerificationToken: verificationToken,
+      emailVerificationExpires: verificationExpires,
       createdAt: now,
       updatedAt: now
     });
+
+    // Send verification email
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001';
+    const verificationLink = `${baseUrl}/verify-email?token=${verificationToken}&email=${encodeURIComponent(email)}`;
+    
+    try {
+      await sendEmail({
+        to: email,
+        subject: 'Verify Your Email - Hillside Logs Fuel',
+        html: generateVerificationEmailHtml(name, verificationLink),
+        text: `Hi ${name}! Please verify your email by clicking this link: ${verificationLink}`
+      });
+      console.log('Verification email sent successfully');
+    } catch (emailError) {
+      console.error('Failed to send verification email:', emailError);
+      // Don't fail the signup if email fails - user can resend later
+    }
+
     console.log('User created successfully:', { id: userId, name, email });
     return NextResponse.json({
       user: {
         id: userId,
         name,
-        email
-      }
+        email,
+        emailVerified: false
+      },
+      message: 'Account created successfully! Please check your email to verify your account.'
     });
   } catch (error) {
     console.error('Error in signup:', error);

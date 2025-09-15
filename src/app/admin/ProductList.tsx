@@ -74,16 +74,18 @@ export default function ProductList({ products: initialProducts }: ProductListPr
 
   async function handleUpdateProduct(updatedProduct: Product) {
     try {
+      // Remove createdAt and updatedAt from the payload
+      const { createdAt, updatedAt, ...safeProduct } = updatedProduct as any;
       const response = await fetch(`/api/products/${updatedProduct.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedProduct),
+        body: JSON.stringify(safeProduct),
       })
 
       if (!response.ok) throw new Error('Failed to update product')
 
-      setProducts(products.map(p => 
-        p.id === updatedProduct.id ? updatedProduct : p
+      setProducts(products.map(p =>
+        p.id === updatedProduct.id ? { ...p, ...safeProduct } : p
       ))
       setShowEditModal(false)
       setEditingProduct(null)
@@ -370,9 +372,10 @@ function EditProductModal({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
               <input
-                type="url"
+                type="text"
                 value={formData.imageUrl || ''}
                 onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                placeholder="/images/products/your-image.webp"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
               />
             </div>

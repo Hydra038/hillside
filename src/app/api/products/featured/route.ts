@@ -13,8 +13,17 @@ const pool = mysql.createPool({
 
 export async function GET() {
   try {
-    const [rows]: any = await pool.query('SELECT * FROM products WHERE is_featured = true ORDER BY created_at DESC LIMIT 8')
-    return NextResponse.json(rows)
+  const [rows]: any = await pool.query('SELECT * FROM products WHERE is_featured = true ORDER BY created_at DESC LIMIT 3')
+    // Map snake_case DB fields to camelCase for frontend compatibility
+    const mappedRows = rows.map((row: any) => ({
+      ...row,
+      imageUrl: row.image_url,
+      stockQuantity: row.stock_quantity,
+      isFeatured: row.is_featured,
+      createdAt: row.created_at,
+      // Optionally remove snake_case fields if not needed
+    }));
+    return NextResponse.json(mappedRows)
   } catch (error) {
     console.error('Error fetching featured products:', error)
     return NextResponse.json({ error: 'Failed to fetch featured products' }, { status: 500 })

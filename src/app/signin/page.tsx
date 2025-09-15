@@ -260,10 +260,6 @@ export default function SignInPage() {
               </Link>
               
               <div className="flex justify-center space-x-4 text-sm">
-                <Link href="/admin/signin" className="text-purple-600 hover:text-purple-700 font-medium transition-colors duration-200">
-                  Admin Portal →
-                </Link>
-                <span className="text-gray-300">|</span>
                 <Link href="/" className="text-gray-600 hover:text-gray-700 font-medium transition-colors duration-200">
                   ← Back to Home
                 </Link>

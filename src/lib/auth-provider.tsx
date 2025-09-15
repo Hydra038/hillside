@@ -32,6 +32,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           credentials: 'include' // Important for sending cookies
         });
         
+
+        if (res.status === 401) {
+          if (isMounted) {
+            setUser(null);
+            setError('Please sign in to continue.');
+          }
+          return;
+        }
         if (!res.ok) {
           throw new Error(`Failed to fetch user: ${res.status}`);
         }

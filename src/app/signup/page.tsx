@@ -52,11 +52,12 @@ export default function SignUpPage() {
 
     try {
       await signUp(formData.name, formData.email, formData.password)
-      setSuccess('Account created successfully! You can now sign in.')
+      setSuccess('Account created successfully! Please check your email to verify your account before signing in.')
+      // Don't redirect immediately - let user know to check email
       setTimeout(() => {
-        router.push('/signin')
+        router.push('/signin?signup=true')
         router.refresh()
-      }, 2000)
+      }, 5000)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {

@@ -4,9 +4,13 @@ import { db } from '@/lib/db'
 import { orders, orderItems, products, users } from '@/lib/db/schema.mysql'
 import { eq } from 'drizzle-orm'
 import jwt from 'jsonwebtoken'
+import { sendEmail, generateShippingNotificationEmailHtml, ShippingNotificationData } from '@/lib/send-email'
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    // Await params to fix Next.js 15 compatibility
+    const { id } = await params;
+    
     // Verify admin authentication
     const cookieStore = await cookies();
     const token = cookieStore.get('auth-token')?.value;
@@ -80,7 +84,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
           status,
           updatedAt: new Date()
         })
-        .where(eq(orders.id, params.id));
+        .where(eq(orders.id, id));
     } catch (dbErr) {
       console.error('PATCH /api/admin/orders/[id]: DB update error', dbErr);
       return NextResponse.json(
@@ -91,7 +95,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 
     const affectedRows = updateResult[0]?.affectedRows ?? 0;
     if (affectedRows === 0) {
-      console.error('PATCH /api/admin/orders/[id]: No order found to update', params.id);
+      console.error('PATCH /api/admin/orders/[id]: No order found to update', id);
       return NextResponse.json(
         { error: 'Order not found' },
         { status: 404 }
@@ -104,7 +108,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       updatedOrder = await db
         .select()
         .from(orders)
-        .where(eq(orders.id, params.id));
+        .where(eq(orders.id, id));
     } catch (fetchErr) {
       console.error('PATCH /api/admin/orders/[id]: Error fetching updated order', fetchErr);
       return NextResponse.json(
@@ -113,7 +117,99 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       );
     }
 
-    console.log(`Order ${params.id} status updated to ${status} by admin ${decoded.email}`);
+    console.log(`Order ${id} status updated to ${status} by admin ${decoded.email}`);
+
+    // If status is changed to 'shipped', send notification email
+    if (status === 'shipped') {
+      try {
+        // Get order with user details for email
+        const orderForEmail = await db
+          .select({
+            id: orders.id,
+            total: orders.total,
+            createdAt: orders.createdAt,
+            shippingAddress: orders.shippingAddress,
+            userName: users.name,
+            userEmail: users.email,
+          })
+          .from(orders)
+          .leftJoin(users, eq(orders.userId, users.id))
+          .where(eq(orders.id, id))
+          .limit(1);
+
+        // Get order items for email
+        const emailOrderItems = await db
+          .select({
+            quantity: orderItems.quantity,
+            priceAtTime: orderItems.priceAtTime,
+            productName: products.name,
+          })
+          .from(orderItems)
+          .leftJoin(products, eq(orderItems.productId, products.id))
+          .where(eq(orderItems.orderId, id));
+
+        if (orderForEmail.length > 0 && orderForEmail[0].userEmail) {
+          const order = orderForEmail[0];
+          
+          // Parse shipping address
+          let shippingAddress;
+          try {
+            shippingAddress = typeof order.shippingAddress === 'string' 
+              ? JSON.parse(order.shippingAddress)
+              : order.shippingAddress;
+          } catch {
+            shippingAddress = {
+              street: 'Address not available',
+              city: '',
+              postcode: '',
+              country: 'UK'
+            };
+          }
+
+          const emailData: ShippingNotificationData = {
+            customerName: order.userName || 'Valued Customer',
+            orderId: order.id.slice(0, 8),
+            orderDate: new Date(order.createdAt).toLocaleDateString('en-GB', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric'
+            }),
+            total: Number(order.total).toFixed(2),
+            items: emailOrderItems.map(item => ({
+              name: item.productName || 'Product',
+              quantity: item.quantity,
+              price: Number(item.priceAtTime || 0).toFixed(2)
+            })),
+            shippingAddress: {
+              street: shippingAddress.street || '',
+              city: shippingAddress.city || '',
+              postcode: shippingAddress.postcode || '',
+              country: shippingAddress.country || 'UK'
+            },
+            trackingNumber: undefined, // Can be added later if tracking system implemented
+            estimatedDelivery: undefined // Can be calculated based on location
+          };
+
+          const emailHtml = generateShippingNotificationEmailHtml(emailData);
+          
+          // Ensure we have a valid email address
+          if (order.userEmail) {
+            await sendEmail({
+              to: order.userEmail,
+              subject: '🚚 Your Firewood Order Has Shipped! - Firewood Logs Fuel',
+              html: emailHtml
+            });
+
+            console.log(`✅ Shipping notification email sent to ${order.userEmail} for order ${id}`);
+          } else {
+            console.warn(`⚠️ No email address found for order ${id}, shipping notification not sent`);
+          }
+        }
+      } catch (emailError) {
+        console.error('❌ Failed to send shipping notification email:', emailError);
+        // Don't fail the order update if email fails
+      }
+    }
 
     return NextResponse.json({ 
       success: true, 
@@ -130,9 +226,12 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Await params to fix Next.js 15 compatibility
+    const { id } = await params;
+    
     // Verify admin authentication
   const cookieStore = await cookies();
   const token = cookieStore.get('auth-token')?.value
@@ -170,7 +269,7 @@ export async function GET(
       })
       .from(orders)
       .leftJoin(users, eq(orders.userId, users.id))
-      .where(eq(orders.id, params.id))
+      .where(eq(orders.id, id))
       .limit(1)
 
     if (orderQuery.length === 0) {
@@ -192,7 +291,7 @@ export async function GET(
       })
       .from(orderItems)
       .leftJoin(products, eq(orderItems.productId, products.id))
-      .where(eq(orderItems.orderId, params.id))
+      .where(eq(orderItems.orderId, id))
 
     const order = orderQuery[0]
     const orderWithDetails = {

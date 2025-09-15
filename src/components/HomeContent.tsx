@@ -69,14 +69,29 @@ export default function HomeContent({ featuredProducts }: HomeContentProps) {
             {featuredProducts.map((product: Product) => (
               <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden">
                 <div className="p-6">
-                  {product.imageUrl && (
+                  {product.imageUrl ? (
                     <img
                       src={product.imageUrl}
                       alt={product.name}
                       className="w-full h-48 object-cover mb-4 rounded"
+                      onError={e => { (e.target as HTMLImageElement).src = '/file.svg'; }}
                     />
+                  ) : (
+                    <div className="w-full h-48 flex items-center justify-center bg-gray-100 mb-4 rounded">
+                      <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11l2 2 4-4m4 6a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    </div>
                   )}
-                  <h3 className="text-xl font-semibold mb-2">{product.name}</h3>
+                  <h3 className="text-xl font-semibold mb-2 flex items-center gap-2">
+                    {product.imageUrl && (
+                      <svg className="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm0 2h12v10H4V5zm2 2a1 1 0 110 2 1 1 0 010-2zm8 6l-3-4-2 3-3-4v6h8z" />
+                      </svg>
+                    )}
+                    {product.name}
+                  </h3>
                   <p className="text-gray-600 mb-4">{product.description}</p>
                   <div className="flex justify-between items-center">
                     <span className="text-2xl font-bold">£{Number(product.price).toFixed(2)}</span>

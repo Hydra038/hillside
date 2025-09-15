@@ -3,6 +3,8 @@ import { products } from '@/lib/db/schema.mysql'
 import ProductList from './ProductList'
 import AddProductForm from './AddProductForm'
 import OrdersManagement from './OrdersManagement'
+import ContactMessagesAdmin from './ContactMessagesAdmin'
+import AdminSupportChat from './AdminSupportChat'
 import AnalyticsDashboard from './AnalyticsDashboard'
 import PaymentSettingsManagement from './PaymentSettingsManagement'
 import UsersManagement from './users/page'
@@ -49,6 +51,8 @@ export default async function AdminDashboardPage() {
             <h2 className="text-2xl font-bold mb-6 text-amber-700">Orders Management</h2>
             <OrdersManagement />
           </section>
+          <ContactMessagesAdmin />
+          <AdminSupportChat />
           <section id="users" className="bg-white/80 backdrop-blur-lg p-8 rounded-2xl shadow-lg mb-8">
             <h2 className="text-2xl font-bold mb-6 text-amber-700">Users Management</h2>
             <UsersManagement />

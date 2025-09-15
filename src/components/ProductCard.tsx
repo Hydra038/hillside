@@ -34,9 +34,11 @@ export default function ProductCard({ product }: ProductCardProps) {
   }
 
   return (
-    <div className={`bg-white rounded-lg shadow-md overflow-hidden relative ${
-      isSpecialOffer ? 'ring-2 ring-red-500 shadow-lg' : ''
-    }`}>
+    <div
+      className={`bg-white rounded-lg shadow-md overflow-hidden relative ${isSpecialOffer ? 'ring-2 ring-red-500 shadow-lg' : ''}`}
+      tabIndex={0}
+      aria-label={`Product card for ${product.name}`}
+    >
       {/* Special Offer Badge */}
       {isSpecialOffer && (
         <div className="absolute top-2 right-2 z-10">
@@ -47,10 +49,11 @@ export default function ProductCard({ product }: ProductCardProps) {
       )}
       
       {product.imageUrl && (
-        <img 
-          src={product.imageUrl} 
-          alt={product.name}
+        <img
+          src={product.imageUrl}
+          alt={product.name || 'Product image'}
           className="w-full h-48 object-cover"
+          loading="lazy"
         />
       )}
       
@@ -69,14 +72,15 @@ export default function ProductCard({ product }: ProductCardProps) {
               MASSIVE SAVINGS!
             </span>
           )}
-          <button 
+          <button
             onClick={handleAddToCart}
             disabled={isAdding || product.stockQuantity === 0}
-            className={`flex items-center gap-2 px-4 py-2 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-              isSpecialOffer 
-                ? 'bg-red-600 text-white hover:bg-red-700' 
+            className={`flex items-center gap-2 px-4 py-2 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-amber-500 ${
+              isSpecialOffer
+                ? 'bg-red-600 text-white hover:bg-red-700'
                 : 'bg-amber-600 text-white hover:bg-amber-700'
             }`}
+            aria-label={`Add ${product.name} to cart`}
           >
             {/* Shopping cart or loading icon */}
             {isAdding ? (
@@ -92,9 +96,11 @@ export default function ProductCard({ product }: ProductCardProps) {
           </button>
         </div>
 
-        <Link 
+        <Link
           href={`/products/${product.id}`}
-          className="flex items-center justify-center gap-2 w-full text-center bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-700 transition-colors"
+          className="flex items-center justify-center gap-2 w-full text-center bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500"
+          tabIndex={0}
+          aria-label={`View details for ${product.name}`}
         >
           {/* Eye icon for view details */}
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

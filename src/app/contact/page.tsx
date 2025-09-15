@@ -1,4 +1,35 @@
+"use client";
+import { useState } from 'react';
+
 export default function ContactPage() {
+  const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
+  const [status, setStatus] = useState<'idle'|'success'|'error'>('idle');
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setStatus('idle');
+    setError(null);
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) {
+        setStatus('success');
+        setForm({ name: '', email: '', subject: '', message: '' });
+      } else {
+        const data = await res.json();
+        setError(data.error || 'Failed to send message');
+        setStatus('error');
+      }
+    } catch (err) {
+      setError('Failed to send message');
+      setStatus('error');
+    }
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-4xl font-bold text-gray-900 mb-8">Contact Us</h1>
@@ -71,7 +102,7 @@ export default function ContactPage() {
         </div>
 
         <div>
-          <form className="bg-white p-6 rounded-lg shadow-md">
+          <form className="bg-white p-6 rounded-lg shadow-md" onSubmit={handleSubmit}>
             <div className="mb-4">
               <label htmlFor="name" className="block text-gray-700 font-medium mb-2">
                 Name
@@ -82,6 +113,8 @@ export default function ContactPage() {
                 name="name"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
                 required
+                value={form.name}
+                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
               />
             </div>
 
@@ -95,6 +128,8 @@ export default function ContactPage() {
                 name="email"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
                 required
+                value={form.email}
+                onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
               />
             </div>
 
@@ -108,6 +143,8 @@ export default function ContactPage() {
                 name="subject"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
                 required
+                value={form.subject}
+                onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
               />
             </div>
 
@@ -121,15 +158,24 @@ export default function ContactPage() {
                 rows={4}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
                 required
+                value={form.message}
+                onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
               ></textarea>
             </div>
 
             <button
               type="submit"
               className="w-full bg-amber-600 text-white py-2 px-4 rounded-md hover:bg-amber-700 transition-colors"
+              disabled={status === 'success'}
             >
-              Send Message
+              {status === 'success' ? 'Message Sent!' : 'Send Message'}
             </button>
+            {status === 'error' && (
+              <div className="text-red-600 mt-2">{error}</div>
+            )}
+            {status === 'success' && (
+              <div className="text-green-600 mt-2">Thank you for contacting us!</div>
+            )}
           </form>
         </div>
       </div>

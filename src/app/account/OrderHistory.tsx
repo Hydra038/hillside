@@ -32,6 +32,43 @@ export default function OrderHistory() {
     }
   }
 
+  const downloadInvoice = async (orderId: string) => {
+    try {
+      const response = await fetch(`/api/orders/${orderId}/invoice`);
+      
+      if (response.ok) {
+        const htmlContent = await response.text();
+        
+        // Create a new window/tab with the invoice HTML
+        const invoiceWindow = window.open('', '_blank');
+        if (invoiceWindow) {
+          invoiceWindow.document.write(htmlContent);
+          invoiceWindow.document.close();
+        } else {
+          // Fallback: create a blob and download
+          const blob = new Blob([htmlContent], { type: 'text/html' });
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `invoice-${orderId.slice(0, 8)}.html`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+        }
+      } else if (response.status === 400) {
+        alert('Invoice not available - order not yet shipped');
+      } else if (response.status === 403) {
+        alert('Access denied - not your order');
+      } else {
+        alert('Failed to download invoice');
+      }
+    } catch (error) {
+      console.error('Error downloading invoice:', error);
+      alert('Error downloading invoice');
+    }
+  }
+
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleDateString('en-GB', {
       day: 'numeric',
@@ -106,6 +143,19 @@ export default function OrderHistory() {
                     <span className={formatOrderStatus(order.status)}>
                       {order.status}
                     </span>
+                    {(order.status === 'shipped' || order.status === 'delivered') && (
+                      <div className="mt-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            downloadInvoice(order.id);
+                          }}
+                          className="inline-flex items-center px-3 py-1 border border-transparent text-xs leading-4 font-medium rounded-md text-white bg-amber-600 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-colors duration-200"
+                        >
+                          📄 Download Invoice
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 

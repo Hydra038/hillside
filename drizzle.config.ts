@@ -5,4 +5,5 @@ dotenv.config();
 export default {
   schema: 'C:/Users/wisem/OneDrive/Documents/FirewoodSite/firewood-ecommerce/src/lib/db/schema.ts',
   out: './drizzle',
+  dialect: 'mysql',
 } satisfies Config;

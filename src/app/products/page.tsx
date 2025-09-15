@@ -35,32 +35,39 @@ const products: Product[] = [
 
 export default function ProductsPage() {
   const [filteredProducts, setFilteredProducts] = useState<Product[]>(products);
-  
-  return (
-    <div className="bg-white">
-      <ProductFilters products={products} setFilteredProducts={setFilteredProducts} />
-      
-      <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 sm:py-24 lg:max-w-7xl lg:px-8">
-        <h2 className="sr-only">Products</h2>
 
-        <div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:gap-x-8">
+  return (
+    <main className="bg-white min-h-screen">
+      <ProductFilters products={products} setFilteredProducts={setFilteredProducts} />
+
+      <section className="mx-auto max-w-2xl px-2 py-8 sm:px-4 sm:py-12 md:py-16 lg:max-w-7xl lg:px-8">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center md:text-left">Products</h2>
+
+        <div className="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:gap-x-8">
           {filteredProducts.map((product) => (
-            <Link key={product.id} href={`/products/${product.id}`} className="group">
+            <Link
+              key={product.id}
+              href={`/products/${product.id}`}
+              className="group focus:outline-none focus:ring-2 focus:ring-amber-500 rounded-lg"
+              tabIndex={0}
+              aria-label={`View details for ${product.name}`}
+            >
               <div className="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-lg bg-gray-200">
                 <Image
                   src={product.imageUrl || '/images/products/placeholder.jpg'}
-                  alt={product.name}
+                  alt={product.name || 'Product image'}
                   width={500}
                   height={500}
-                  className="h-full w-full object-cover object-center group-hover:opacity-75"
+                  className="h-full w-full object-cover object-center group-hover:opacity-75 transition-opacity duration-200"
+                  priority={true}
                 />
               </div>
-              <h3 className="mt-4 text-sm text-gray-700">{product.name}</h3>
-              <p className="mt-1 text-lg font-medium text-gray-900">£{Number(product.price).toFixed(2)}</p>
+              <h3 className="mt-4 text-base font-medium text-gray-800 group-hover:text-amber-700 transition-colors duration-200">{product.name}</h3>
+              <p className="mt-1 text-lg font-semibold text-gray-900">£{Number(product.price).toFixed(2)}</p>
             </Link>
           ))}
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

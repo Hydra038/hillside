@@ -1,3 +1,22 @@
+export const support_messages = mysqlTable('support_messages', {
+  id: serial('id').primaryKey(),
+  user_id: varchar('user_id', { length: 36 }).notNull(),
+  sender: mysqlEnum('sender', ['user', 'admin']).notNull(),
+  message: text('message').notNull(),
+  created_at: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+  thread_id: int('thread_id'),
+});
+export const contact_messages = mysqlTable('contact_messages', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  email: varchar('email', { length: 255 }).notNull(),
+  subject: varchar('subject', { length: 255 }).notNull(),
+  message: text('message').notNull(),
+  created_at: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+  replied: tinyint('replied').notNull().default(0),
+  reply_message: text('reply_message'),
+  replied_at: datetime('replied_at'),
+});
 import { mysqlTable, serial, varchar, text, decimal, int, json, datetime, tinyint, mysqlEnum } from 'drizzle-orm/mysql-core';
 import { sql, relations } from 'drizzle-orm';
 
@@ -10,6 +29,11 @@ export const users = mysqlTable('users', {
   password: varchar('password', { length: 255 }).notNull(),
   role: mysqlEnum('role', ['user', 'admin']).default('user').notNull(),
   address: json('address'),
+  emailVerified: tinyint('email_verified').notNull().default(0),
+  emailVerificationToken: varchar('email_verification_token', { length: 255 }),
+  emailVerificationExpires: datetime('email_verification_expires'),
+  resetToken: varchar('reset_token', { length: 255 }),
+  resetTokenExpires: datetime('reset_token_expires'),
   createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`)
 });
@@ -33,7 +57,7 @@ export const orderStatusEnum = mysqlEnum('order_status', ['pending', 'processing
 export const orders = mysqlTable('orders', {
   id: varchar('id', { length: 36 }).primaryKey(), // UUID as varchar
   userId: varchar('user_id', { length: 36 }).notNull().references(() => users.id),
-  status: mysqlEnum('status', ['pending', 'paid', 'shipped', 'cancelled']).notNull().default('pending'),
+  status: mysqlEnum('status', ['pending', 'processing', 'paid', 'shipped', 'delivered', 'cancelled']).notNull().default('pending'),
   total: decimal('total', { precision: 10, scale: 2 }).notNull(),
   shippingAddress: json('shipping_address'),
   paymentMethod: varchar('payment_method', { length: 255 }),
