@@ -2,11 +2,10 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-
 export async function GET() {
   try {
+    console.log('API: Attempting to fetch products...')
+    
     const products = await prisma.product.findMany({
       orderBy: [
         { isFeatured: 'desc' },
@@ -26,10 +25,19 @@ export async function GET() {
         features: true
       }
     })
+    
+    console.log(`API: Successfully fetched ${products.length} products`)
     return NextResponse.json(products)
   } catch (error) {
-    console.error('Error fetching products:', error)
-    return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 })
+    console.error('API Error fetching products:', error)
+    console.error('Error details:', error instanceof Error ? error.message : String(error))
+    if (error instanceof Error && error.stack) {
+      console.error('Error stack:', error.stack)
+    }
+    return NextResponse.json({ 
+      error: 'Failed to fetch products',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 }
 
