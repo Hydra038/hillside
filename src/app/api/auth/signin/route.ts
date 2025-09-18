@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
-import { users } from '@/lib/db/schema.mysql'
-import { eq } from 'drizzle-orm'
+import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
@@ -42,26 +40,25 @@ export async function POST(request: Request) {
       );
     }
 
-    // Find user using drizzle ORM
-    const userResults = await db
-      .select({
-        id: users.id,
-        name: users.name,
-        email: users.email,
-        password: users.password,
-        role: users.role,
-        createdAt: users.createdAt
-      })
-      .from(users)
-  .where(eq(users.email, email));
-    console.log('User found:', !!userResults.length)
-    if (userResults.length === 0) {
+    // Find user using Prisma
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        password: true,
+        role: true,
+        createdAt: true
+      }
+    });
+    console.log('User found:', !!user)
+    if (!user) {
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
       );
     }
-    const user = userResults[0];
 
     // Verify password
     const isValid = await bcrypt.compare(password, user.password);

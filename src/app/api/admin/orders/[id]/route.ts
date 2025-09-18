@@ -193,7 +193,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           const emailHtml = generateShippingNotificationEmailHtml(emailData);
           
           await sendEmail({
-            to: order.userEmail,
+            to: order.userEmail!,
             subject: '🚚 Your Firewood Order Has Shipped! - Hillside Logs Fuel',
             html: emailHtml
           });

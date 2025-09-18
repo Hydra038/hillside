@@ -1,8 +1,44 @@
 import ProductCard from '@/components/ProductCard';
+import { prisma } from '@/lib/prisma';
 
 export default async function ShopPage() {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/products`, { cache: 'no-store' })
-  const allProducts = await res.json()
+  let allProducts: any[] = [];
+  
+  try {
+    // Fetch products directly from database using Prisma
+    const dbProducts = await prisma.product.findMany({
+      orderBy: [
+        { isFeatured: 'desc' },
+        { createdAt: 'desc' }
+      ],
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        price: true,
+        imageUrl: true,
+        category: true,
+        stockQuantity: true,
+        isFeatured: true,
+        createdAt: true
+      }
+    });
+    
+    allProducts = dbProducts.map(product => ({
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      price: product.price.toString(),
+      imageUrl: product.imageUrl || undefined,
+      category: product.category || undefined,
+      stockQuantity: product.stockQuantity || 0,
+      isFeatured: product.isFeatured || false,
+      createdAt: product.createdAt
+    }));
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    allProducts = [];
+  }
 
   // Sort products to show special offers first
   const sortedProducts = allProducts.sort((a: any, b: any) => {
@@ -21,17 +57,17 @@ export default async function ShopPage() {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-4xl font-bold text-gray-900 mb-8">Our Firewood Products</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-  {sortedProducts.map((product: any) => (
+        {sortedProducts.map((product: any) => (
           <ProductCard key={product.id} product={{
             id: product.id,
             name: product.name,
             description: product.description,
             price: product.price?.toString?.() ?? '',
-            imageUrl: product.image_url || undefined,
+            imageUrl: product.imageUrl || undefined,
             category: product.category,
-            stockQuantity: product.stock_quantity,
-            isFeatured: product.is_featured,
-            createdAt: product.created_at
+            stockQuantity: product.stockQuantity,
+            isFeatured: product.isFeatured,
+            createdAt: product.createdAt
           }} />
         ))}
       </div>

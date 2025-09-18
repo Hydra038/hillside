@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
-import { users } from '@/lib/db/schema.mysql'
-import { eq } from 'drizzle-orm'
+import { prisma } from '@/lib/prisma'
 import { randomUUID } from 'crypto'
 import bcrypt from 'bcryptjs'
 import { sendEmail, generateVerificationEmailHtml } from '@/lib/send-email'
@@ -19,14 +17,14 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check if user exists using drizzle ORM
+    // Check if user exists using Prisma
     console.log('Checking if user exists...')
-    const existingUser = await db
-      .select({ id: users.id })
-      .from(users)
-      .where(eq(users.email, email));
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true }
+    });
     console.log('Existing user check result:', existingUser);
-    if (existingUser.length > 0) {
+    if (existingUser) {
       return NextResponse.json(
         { error: 'User already exists' },
         { status: 400 }
@@ -41,21 +39,20 @@ export async function POST(request: Request) {
     const verificationToken = randomUUID();
     const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-    // Create user using drizzle ORM
+    // Create user using Prisma
     console.log('Creating new user...')
     const userId = randomUUID();
-    const now = new Date();
-    await db.insert(users).values({
-      id: userId,
-      name,
-      email,
-      password: hashedPassword,
-      role: 'user',
-      emailVerified: 0,
-      emailVerificationToken: verificationToken,
-      emailVerificationExpires: verificationExpires,
-      createdAt: now,
-      updatedAt: now
+    const newUser = await prisma.user.create({
+      data: {
+        id: userId,
+        name,
+        email,
+        password: hashedPassword,
+        role: 'USER',
+        emailVerified: false,
+        emailVerificationToken: verificationToken,
+        emailVerificationExpires: verificationExpires
+      }
     });
 
     // Send verification email

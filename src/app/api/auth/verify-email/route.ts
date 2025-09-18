@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
-import { users } from '@/lib/db/schema.mysql'
-import { eq, and } from 'drizzle-orm'
+import { prisma } from '@/lib/prisma'
 
 export async function GET(request: Request) {
   try {
@@ -17,46 +15,42 @@ export async function GET(request: Request) {
     }
 
     // Find user with matching token and email
-    const user = await db
-      .select({
-        id: users.id,
-        name: users.name,
-        email: users.email,
-        emailVerified: users.emailVerified,
-        emailVerificationExpires: users.emailVerificationExpires
-      })
-      .from(users)
-      .where(
-        and(
-          eq(users.email, email),
-          eq(users.emailVerificationToken, token)
-        )
-      )
+    const user = await prisma.user.findFirst({
+      where: {
+        email: email,
+        emailVerificationToken: token
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        emailVerified: true,
+        emailVerificationExpires: true
+      }
+    });
 
-    if (user.length === 0) {
+    if (!user) {
       return NextResponse.json(
         { error: 'Invalid verification token' },
         { status: 400 }
       )
     }
 
-    const userData = user[0]
-
     // Check if already verified
-    if (userData.emailVerified) {
+    if (user.emailVerified) {
       return NextResponse.json({
         message: 'Email already verified',
         user: {
-          id: userData.id,
-          name: userData.name,
-          email: userData.email,
+          id: user.id,
+          name: user.name,
+          email: user.email,
           emailVerified: true
         }
       })
     }
 
     // Check if token has expired
-    if (userData.emailVerificationExpires && new Date() > userData.emailVerificationExpires) {
+    if (user.emailVerificationExpires && new Date() > user.emailVerificationExpires) {
       return NextResponse.json(
         { error: 'Verification token has expired' },
         { status: 400 }
@@ -64,24 +58,23 @@ export async function GET(request: Request) {
     }
 
     // Update user as verified
-    await db
-      .update(users)
-      .set({
-        emailVerified: 1,
+    await prisma.user.update({
+      where: { email },
+      data: {
+        emailVerified: true,
         emailVerificationToken: null,
-        emailVerificationExpires: null,
-        updatedAt: new Date()
-      })
-      .where(eq(users.email, email))
+        emailVerificationExpires: null
+      }
+    });
 
     console.log('Email verified successfully for user:', email)
 
     return NextResponse.json({
       message: 'Email verified successfully!',
       user: {
-        id: userData.id,
-        name: userData.name,
-        email: userData.email,
+        id: user.id,
+        name: user.name,
+        email: user.email,
         emailVerified: true
       }
     })
@@ -107,26 +100,24 @@ export async function POST(request: Request) {
     }
 
     // Find user
-    const user = await db
-      .select({
-        id: users.id,
-        name: users.name,
-        email: users.email,
-        emailVerified: users.emailVerified
-      })
-      .from(users)
-      .where(eq(users.email, email))
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        emailVerified: true
+      }
+    });
 
-    if (user.length === 0) {
+    if (!user) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
       )
     }
 
-    const userData = user[0]
-
-    if (userData.emailVerified) {
+    if (user.emailVerified) {
       return NextResponse.json(
         { error: 'Email is already verified' },
         { status: 400 }
@@ -139,14 +130,13 @@ export async function POST(request: Request) {
     const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
 
     // Update user with new token
-    await db
-      .update(users)
-      .set({
+    await prisma.user.update({
+      where: { email },
+      data: {
         emailVerificationToken: verificationToken,
-        emailVerificationExpires: verificationExpires,
-        updatedAt: new Date()
-      })
-      .where(eq(users.email, email))
+        emailVerificationExpires: verificationExpires
+      }
+    });
 
     // Send new verification email
     const { sendEmail, generateVerificationEmailHtml } = await import('@/lib/send-email')
@@ -156,8 +146,8 @@ export async function POST(request: Request) {
     await sendEmail({
       to: email,
       subject: 'Verify Your Email - Hillside Logs Fuel',
-      html: generateVerificationEmailHtml(userData.name, verificationLink),
-      text: `Hi ${userData.name}! Please verify your email by clicking this link: ${verificationLink}`
+      html: generateVerificationEmailHtml(user.name, verificationLink),
+      text: `Hi ${user.name}! Please verify your email by clicking this link: ${verificationLink}`
     })
 
     return NextResponse.json({

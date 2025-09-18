@@ -17,7 +17,7 @@ export const contact_messages = mysqlTable('contact_messages', {
   reply_message: text('reply_message'),
   replied_at: datetime('replied_at'),
 });
-import { mysqlTable, serial, varchar, text, decimal, int, json, datetime, tinyint, mysqlEnum } from 'drizzle-orm/mysql-core';
+import { mysqlTable, serial, varchar, text, decimal, int, json, datetime, tinyint, mysqlEnum, boolean } from 'drizzle-orm/mysql-core';
 import { sql, relations } from 'drizzle-orm';
 
 export const userRoleEnum = mysqlEnum('user_role', ['user', 'admin']);
@@ -32,6 +32,8 @@ export const users = mysqlTable('users', {
   emailVerified: tinyint('email_verified').notNull().default(0),
   emailVerificationToken: varchar('email_verification_token', { length: 255 }),
   emailVerificationExpires: datetime('email_verification_expires'),
+  reset_token: varchar('reset_token', { length: 255 }),
+  reset_token_expires: datetime('reset_token_expires'),
   createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`)
 });
@@ -46,6 +48,7 @@ export const products = mysqlTable('products', {
   stock_quantity: int('stock_quantity').notNull().default(0),
   season: varchar('season', { length: 255 }),
   features: json('features'),
+  isFeatured: boolean('is_featured').notNull().default(false),
   createdAt: datetime('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: datetime('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`)
 });
@@ -55,7 +58,7 @@ export const orderStatusEnum = mysqlEnum('order_status', ['pending', 'processing
 export const orders = mysqlTable('orders', {
   id: varchar('id', { length: 36 }).primaryKey(), // UUID as varchar
   userId: varchar('user_id', { length: 36 }).notNull().references(() => users.id),
-  status: mysqlEnum('status', ['pending', 'paid', 'shipped', 'cancelled']).notNull().default('pending'),
+  status: mysqlEnum('status', ['pending', 'processing', 'shipped', 'delivered', 'cancelled']).notNull().default('pending'),
   total: decimal('total', { precision: 10, scale: 2 }).notNull(),
   shippingAddress: json('shipping_address'),
   paymentMethod: varchar('payment_method', { length: 255 }),

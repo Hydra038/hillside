@@ -10,6 +10,9 @@ import PaymentSettingsManagement from './PaymentSettingsManagement'
 import UsersManagement from './users/page'
 import AdminGuard from '@/components/AdminGuard'
 
+// Force dynamic rendering to avoid database connection issues during build
+export const dynamic = 'force-dynamic'
+
 export default async function AdminDashboardPage() {
   // Fetch products using Drizzle MySQL
   const dbProducts = await db.select().from(products);

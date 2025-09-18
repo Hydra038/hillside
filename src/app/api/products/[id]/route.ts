@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
-import { products } from '@/lib/db/schema.mysql'
-import { eq } from 'drizzle-orm'
+import { prisma } from '@/lib/prisma'
 
 export async function GET(
   request: Request,
@@ -9,31 +7,18 @@ export async function GET(
 ) {
   try {
     const params = await context.params;
-    const result = await db.select().from(products).where(eq(products.id, parseInt(params.id)))
-    if (result.length === 0) {
+    const product = await prisma.product.findUnique({
+      where: { id: parseInt(params.id) }
+    })
+    
+    if (!product) {
       return NextResponse.json(
         { error: 'Product not found' },
         { status: 404 }
       )
     }
     
-    // Map database fields to expected frontend properties
-    const product = result[0]
-    const mappedProduct = {
-      id: product.id,
-      name: product.name,
-      description: product.description,
-      price: product.price,
-      category: product.category,
-      imageUrl: product.image_url, // Map snake_case to camelCase
-      stockQuantity: product.stock_quantity, // Map snake_case to camelCase
-      isFeatured: false, // Default value
-      createdAt: product.createdAt,
-      season: product.season,
-      features: product.features
-    }
-    
-    return NextResponse.json(mappedProduct)
+    return NextResponse.json(product)
   } catch (error) {
     console.error('Error fetching product:', error)
     return NextResponse.json(
@@ -50,18 +35,13 @@ export async function PUT(
   try {
     const params = await context.params;
     const updates = await request.json();
-    await db
-      .update(products)
-      .set(updates)
-      .where(eq(products.id, parseInt(params.id)));
-    const updatedProduct = await db.select().from(products).where(eq(products.id, parseInt(params.id)));
-    if (updatedProduct.length === 0) {
-      return NextResponse.json(
-        { error: 'Product not found' },
-        { status: 404 }
-      );
-    }
-    return NextResponse.json(updatedProduct[0]);
+    
+    const updatedProduct = await prisma.product.update({
+      where: { id: parseInt(params.id) },
+      data: updates
+    });
+    
+    return NextResponse.json(updatedProduct);
   } catch (error) {
     console.error('Error updating product:', error);
     return NextResponse.json(
@@ -77,10 +57,11 @@ export async function DELETE(
 ) {
   try {
     const params = await context.params;
-    await db
-      .delete(products)
-      .where(eq(products.id, parseInt(params.id)));
-    // Optionally, you can return a success message or the deleted id
+    
+    await prisma.product.delete({
+      where: { id: parseInt(params.id) }
+    });
+    
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting product:', error);

@@ -57,7 +57,7 @@ export default function ProductDetails({ product }: Props) {
     return {
       extended: "Premium seasoned firewood logs, carefully selected and prepared for optimal burning performance. Our logs are sourced from sustainable UK forests and processed to the highest standards to ensure clean, efficient burning with maximum heat output for your home heating needs.",
       specifications: {
-        weight: product.weight ? `${product.weight}kg` : "Standard weight",
+        weight: "Standard weight",
         volume: "Standard cord measurements",
         burnTime: "6-8 hours per load",
         heatOutput: "4.0-4.5 kWh/kg",
