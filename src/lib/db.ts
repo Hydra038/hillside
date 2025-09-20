@@ -1,3 +1,7 @@
+// THIS FILE IS DEPRECATED - USE PRISMA INSTEAD
+// Left for backward compatibility but not active
+
+/*
 import { drizzle } from 'drizzle-orm/mysql2';
 import mysql from 'mysql2/promise';
 import * as schema from './db/schema.mysql';
@@ -19,3 +23,7 @@ const initializeDb = () => {
 };
 
 export const db = initializeDb();
+*/
+
+// Placeholder to prevent import errors
+export const db = null;
