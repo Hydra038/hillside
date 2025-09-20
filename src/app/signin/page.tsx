@@ -20,6 +20,19 @@ export default function SignInPage() {
 
   const redirect = searchParams.get('redirect') || '/'
 
+  // Handle immediate redirect if user is already authenticated
+  useEffect(() => {
+    if (user && !loading) {
+      // Check if user is admin and redirect to admin dashboard
+      if (user.role === 'ADMIN') {
+        router.push('/admin')
+        return
+      }
+      // Regular user login - redirect to intended page
+      router.push(redirect)
+    }
+  }, [user, loading, router, redirect])
+
   // Don't render the form if user is authenticated
   if (loading) {
     return (
@@ -29,15 +42,11 @@ export default function SignInPage() {
     )
   }
 
+  // If user is authenticated, show loading while redirecting
   if (user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600 mb-4">You are already signed in.</p>
-          <Link href="/" className="text-amber-600 hover:text-amber-700">
-            Go to Home
-          </Link>
-        </div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-amber-600"></div>
       </div>
     )
   }
@@ -58,19 +67,11 @@ export default function SignInPage() {
     setError('')
 
     try {
-      const userResult = await signIn(formData.email, formData.password)
-
-      // Check if user is admin and redirect to admin dashboard
-      if (userResult?.role === 'ADMIN') {
-        router.push('/admin')
-        return
-      }
-      // Regular user login - redirect to intended page
-      router.push(redirect)
+      await signIn(formData.email, formData.password)
+      // Redirect is now handled by useEffect when user state changes
     } catch (err) {
       console.error('Sign in error:', err)
       setError(err instanceof Error ? err.message : 'Invalid email or password')
-    } finally {
       setIsLoading(false)
     }
   }
