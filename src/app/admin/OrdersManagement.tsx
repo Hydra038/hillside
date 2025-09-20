@@ -67,6 +67,7 @@ export default function OrdersManagement() {
   }
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
+    console.log(`🚀 DEBUG: Starting order status update - ID: ${orderId}, Status: ${newStatus}`);
     setUpdating(orderId)
     try {
       const response = await fetch(`/api/admin/orders/${orderId}`, {
@@ -77,15 +78,58 @@ export default function OrdersManagement() {
         body: JSON.stringify({ status: newStatus }),
       })
 
+      console.log(`🔍 DEBUG: Response received - Status: ${response.status}, OK: ${response.ok}`);
+
       if (response.ok) {
-        // Update local state
+        // Update local state - convert the returned status to match UI format
+        const updatedOrderData = await response.json();
         setOrders(orders.map(order =>
           order.id === orderId
-            ? { ...order, status: newStatus as any }
+            ? { ...order, status: updatedOrderData.order.status }
             : order
         ))
+        console.log(`✅ Order ${orderId} status updated to ${newStatus}`)
       } else {
-        console.error('Failed to update order status')
+        // Get detailed error information
+        console.log('🔍 DEBUG: Response not OK, status:', response.status);
+        let errorDetails;
+        try {
+          const errorText = await response.text();
+          console.log('🔍 DEBUG: Error text received:', errorText);
+
+          errorDetails = {
+            status: response.status,
+            statusText: response.statusText,
+            url: response.url,
+            headers: Object.fromEntries(response.headers.entries()),
+            error: errorText
+          };
+
+          // Try to parse as JSON if possible
+          if (errorText) {
+            try {
+              const errorJson = JSON.parse(errorText);
+              errorDetails.parsedError = errorJson;
+              console.log('🔍 DEBUG: Parsed JSON error:', errorJson);
+            } catch (parseErr) {
+              console.log('🔍 DEBUG: Could not parse as JSON:', parseErr.message);
+              // Not JSON, keep as text
+            }
+          }
+
+          console.log('🔍 DEBUG: Final errorDetails object:', errorDetails);
+        } catch (readError) {
+          console.log('🔍 DEBUG: Error reading response:', readError.message);
+          errorDetails = {
+            status: response.status,
+            statusText: response.statusText,
+            url: response.url,
+            readError: readError.message
+          };
+        }
+
+        console.error('Failed to update order status:', errorDetails);
+        alert(`Failed to update order status: ${response.status} ${response.statusText}`);
       }
     } catch (error) {
       console.error('Error updating order:', error)
@@ -107,6 +151,34 @@ export default function OrdersManagement() {
       console.error('Error in bulk update:', error)
     }
   }
+
+  const downloadInvoice = async (orderId: string) => {
+    try {
+      const response = await fetch(`/api/orders/${orderId}/invoice`, {
+        method: 'GET',
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `invoice-${orderId.slice(0, 8)}.html`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        console.log(`✅ Invoice downloaded for order ${orderId}`);
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to download invoice:', errorData);
+        alert(`Failed to download invoice: ${errorData.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error downloading invoice:', error);
+      alert('Failed to download invoice');
+    }
+  };
 
   const toggleOrderSelection = (orderId: string) => {
     const newSelected = new Set(selectedOrders)
@@ -151,6 +223,7 @@ export default function OrdersManagement() {
   }
 
   const getStatusColor = (status: string) => {
+    const normalizedStatus = status.toLowerCase();
     const colors = {
       pending: 'bg-yellow-100 text-yellow-800',
       processing: 'bg-blue-100 text-blue-800',
@@ -158,11 +231,15 @@ export default function OrdersManagement() {
       delivered: 'bg-green-100 text-green-800',
       cancelled: 'bg-red-100 text-red-800'
     }
-    return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800'
+    return colors[normalizedStatus as keyof typeof colors] || 'bg-gray-100 text-gray-800'
+  }
+
+  const formatStatusDisplay = (status: string) => {
+    return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
   }
 
   const filteredOrders = orders.filter(order => {
-    const matchesFilter = filter === 'all' || order.status === filter
+    const matchesFilter = filter === 'all' || order.status.toLowerCase() === filter
     const matchesSearch = !searchTerm ||
       order.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -194,8 +271,8 @@ export default function OrdersManagement() {
               key={status}
               onClick={() => setFilter(status)}
               className={`p-3 rounded-lg text-center transition-colors ${filter === status
-                  ? 'bg-amber-100 text-amber-800 border-2 border-amber-300'
-                  : 'bg-gray-50 hover:bg-gray-100'
+                ? 'bg-amber-100 text-amber-800 border-2 border-amber-300'
+                : 'bg-gray-50 hover:bg-gray-100'
                 }`}
             >
               <div className="text-2xl font-bold">{count}</div>
@@ -326,12 +403,12 @@ export default function OrdersManagement() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
-                      {order.status}
+                      {formatStatusDisplay(order.status)}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
                     <select
-                      value={order.status}
+                      value={order.status.toLowerCase()}
                       onChange={(e) => updateOrderStatus(order.id, e.target.value)}
                       disabled={updating === order.id}
                       className="border border-gray-300 rounded-md px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500"
@@ -344,6 +421,20 @@ export default function OrdersManagement() {
                     </select>
                     {updating === order.id && (
                       <span className="text-xs text-gray-500">Updating...</span>
+                    )}
+                  </td>
+                  <td className="px-2 sm:px-4 md:px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                    {(order.status.toUpperCase() === 'SHIPPED' || order.status.toUpperCase() === 'DELIVERED') && (
+                      <button
+                        onClick={() => downloadInvoice(order.id)}
+                        className="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors duration-200"
+                        title="Download Invoice"
+                      >
+                        📄 Invoice
+                      </button>
+                    )}
+                    {(order.status.toUpperCase() === 'PENDING' || order.status.toUpperCase() === 'PROCESSING') && (
+                      <span className="text-xs text-gray-400 italic">Invoice pending shipment</span>
                     )}
                   </td>
                 </tr>

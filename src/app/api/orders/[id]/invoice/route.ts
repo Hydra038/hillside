@@ -11,7 +11,7 @@ export async function GET(
   try {
     // Await params to fix Next.js 15 compatibility
     const { id } = await params;
-    
+
     // Verify user authentication
     const cookieStore = await cookies();
     const token = cookieStore.get('auth-token')?.value;
@@ -72,7 +72,7 @@ export async function GET(
     }
 
     // Check if user owns this order (or is admin)
-    if (decoded.role !== 'admin' && order.userId !== decoded.userId) {
+    if (decoded.role.toLowerCase() !== 'admin' && order.userId !== decoded.userId) {
       return NextResponse.json(
         { error: 'Access denied - not your order' },
         { status: 403 }
@@ -90,7 +90,7 @@ export async function GET(
     // Parse shipping address
     let shippingAddress;
     try {
-      shippingAddress = typeof order.shippingAddress === 'string' 
+      shippingAddress = typeof order.shippingAddress === 'string'
         ? JSON.parse(order.shippingAddress)
         : order.shippingAddress;
     } catch {

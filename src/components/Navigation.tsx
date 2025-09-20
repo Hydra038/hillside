@@ -14,9 +14,9 @@ export default function Navigation() {
   const { items } = useCartStore()
   const { user, signOut } = useAuth()
   const pathname = usePathname()
-  
+
   const cartItemCount = items.reduce((total, item) => total + item.quantity, 0)
-  
+
   // Hide regular user menu items and account links on admin pages or account page
   const isAdminPage = pathname?.startsWith('/admin')
   const isAccountPage = pathname === '/account'
@@ -91,8 +91,8 @@ export default function Navigation() {
           {/* User Actions */}
           <div className="hidden md:flex items-center space-x-4">
             {showRegularNavItems && (
-              <button 
-                onClick={() => setIsCartOpen(true)} 
+              <button
+                onClick={() => setIsCartOpen(true)}
                 className="relative text-gray-700 hover:text-amber-600 flex items-center space-x-2 bg-gray-50 hover:bg-amber-50 px-3 py-2 rounded-lg transition-colors"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -106,22 +106,22 @@ export default function Navigation() {
                 )}
               </button>
             )}
-            
+
             {user ? (
               <div className="flex items-center space-x-4">
-                  {/* Hide My Account link on admin dashboard */}
-                  {!isAdminPage && (
-                    <Link 
-                      href="/account" 
-                      className="flex items-center gap-2 text-lg font-semibold text-amber-700 bg-amber-50 px-4 py-2 rounded-full shadow-sm border border-amber-200 hover:bg-amber-100 transition"
-                    >
-                      <svg className="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.657 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                      My Account
-                    </Link>
-                  )}
+                {/* Hide My Account link on admin dashboard */}
+                {!isAdminPage && (
+                  <Link
+                    href="/account"
+                    className="flex items-center gap-2 text-lg font-semibold text-amber-700 bg-amber-50 px-4 py-2 rounded-full shadow-sm border border-amber-200 hover:bg-amber-100 transition"
+                  >
+                    <svg className="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.657 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    My Account
+                  </Link>
+                )}
                 {user.role === 'ADMIN' && (
-                  <Link 
-                    href="/admin" 
+                  <Link
+                    href="/admin"
                     className="text-purple-600 hover:text-purple-700 font-medium px-3 py-2 rounded-lg bg-purple-100 hover:bg-purple-200 transition"
                   >
                     Admin
@@ -130,8 +130,8 @@ export default function Navigation() {
                 {/* Sign Out button removed from navigation */}
               </div>
             ) : (
-              <Link 
-                href="/signin" 
+              <Link
+                href="/signin"
                 className="bg-amber-600 text-white px-4 py-2 rounded hover:bg-amber-700 transition-colors"
               >
                 Sign In

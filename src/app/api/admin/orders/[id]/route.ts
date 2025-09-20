@@ -8,10 +8,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   try {
     // Await params to fix Next.js 15 compatibility
     const { id } = await params;
-    
+
     // Verify admin authentication
     const cookieStore = await cookies();
     const token = cookieStore.get('auth-token')?.value;
+
+    console.log('PATCH /api/admin/orders/[id]: Auth check - token present:', !!token);
 
     if (!token) {
       console.error('PATCH /api/admin/orders/[id]: No auth-token cookie');
@@ -34,6 +36,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         email: string;
         role: string;
       };
+      console.log('PATCH /api/admin/orders/[id]: JWT decoded successfully - role:', decoded.role, 'email:', decoded.email);
     } catch (jwtErr) {
       console.error('PATCH /api/admin/orders/[id]: JWT verification failed', jwtErr);
       return NextResponse.json(
@@ -42,7 +45,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       );
     }
 
-    if (decoded.role !== 'admin') {
+    if (decoded.role.toLowerCase() !== 'admin') {
       console.error('PATCH /api/admin/orders/[id]: User is not admin', decoded);
       return NextResponse.json(
         { error: 'Admin access required' },
@@ -63,9 +66,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       );
     }
 
-    // Validate status
+    // Validate status and convert to uppercase for Prisma enum
     const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
-    if (!validStatuses.includes(status)) {
+    if (!validStatuses.includes(status.toLowerCase())) {
       console.error('PATCH /api/admin/orders/[id]: Invalid status value', status);
       return NextResponse.json(
         { error: 'Invalid status' },
@@ -73,13 +76,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       );
     }
 
+    // Convert to uppercase for Prisma OrderStatus enum
+    const uppercaseStatus = status.toUpperCase();
+
     // Update order status
     let updatedOrder;
     try {
       updatedOrder = await prisma.order.update({
         where: { id },
-        data: { 
-          status,
+        data: {
+          status: uppercaseStatus,
           updatedAt: new Date()
         }
       });
@@ -99,10 +105,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       );
     }
 
-    console.log(`Order ${id} status updated to ${status} by admin ${decoded.email}`);
+    console.log(`Order ${id} status updated to ${uppercaseStatus} by admin ${decoded.email}`);
 
     // If status is changed to 'shipped', send notification email
-    if (status === 'shipped') {
+    if (status.toLowerCase() === 'shipped') {
       try {
         // Get order with user details for email
         const orderForEmail = await prisma.order.findUnique({
@@ -130,7 +136,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           // Parse shipping address
           let shippingAddress;
           try {
-            shippingAddress = typeof orderForEmail.shippingAddress === 'string' 
+            shippingAddress = typeof orderForEmail.shippingAddress === 'string'
               ? JSON.parse(orderForEmail.shippingAddress)
               : orderForEmail.shippingAddress;
           } catch {
@@ -167,7 +173,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           };
 
           const emailHtml = generateShippingNotificationEmailHtml(emailData);
-          
+
           await sendEmail({
             to: orderForEmail.user.email,
             subject: '🚚 Your Firewood Order Has Shipped! - Hillside Logs Fuel',
@@ -182,8 +188,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       }
     }
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       order: updatedOrder
     });
   } catch (error) {
@@ -202,7 +208,7 @@ export async function GET(
   try {
     // Await params to fix Next.js 15 compatibility
     const { id } = await params;
-    
+
     // Verify admin authentication
     const cookieStore = await cookies();
     const token = cookieStore.get('auth-token')?.value
@@ -218,7 +224,7 @@ export async function GET(
       role: string;
     }
 
-    if (decoded.role !== 'admin') {
+    if (decoded.role.toLowerCase() !== 'admin') {
       return NextResponse.json(
         { error: 'Admin access required' },
         { status: 403 }
