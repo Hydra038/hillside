@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { db } from '@/lib/db'
-import { orders, orderItems, products } from '@/lib/db/schema.mysql'
+import { prisma } from '@/lib/prisma'
 import { randomUUID } from 'crypto'
-import { eq } from 'drizzle-orm'
 import jwt from 'jsonwebtoken'
 
 export async function GET() {
@@ -31,17 +29,21 @@ export async function GET() {
     }
 
     // Get user's orders with items
-    const userOrders = await db
-      .select({
-        id: orders.id,
-        total: orders.total,
-        status: orders.status,
-        createdAt: orders.createdAt,
-        shippingAddress: orders.shippingAddress,
-      })
-      .from(orders)
-      .where(eq(orders.userId, decoded.userId))
-      .orderBy(orders.createdAt)
+    const userOrders = await prisma.order.findMany({
+      where: {
+        userId: decoded.userId
+      },
+      select: {
+        id: true,
+        total: true,
+        status: true,
+        createdAt: true,
+        shippingAddress: true,
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    })
 
     return NextResponse.json({ orders: userOrders })
   } catch (error) {
@@ -83,14 +85,30 @@ export async function POST(request: Request) {
     console.log('Orders POST: User authenticated:', decoded.userId)
 
     // Get order data from request
-  const { items, total, shippingAddress, paymentMethod, paymentPlan } = await request.json()
+    const { items, total, shippingAddress, paymentMethod, paymentPlan } = await request.json()
     
     console.log('Orders POST: Received data:', { 
       itemsCount: items?.length, 
       total, 
       shippingAddress,
+      paymentMethod,
+      paymentPlan,
       itemsSample: items?.[0]
     })
+
+    // Fetch payment method name if paymentMethod ID is provided
+    let paymentMethodName = null
+    if (paymentMethod) {
+      try {
+        const paymentSetting = await prisma.paymentSetting.findUnique({
+          where: { id: parseInt(paymentMethod.toString()) }
+        })
+        paymentMethodName = paymentSetting?.displayName || paymentMethod.toString()
+      } catch (err) {
+        console.log('Orders POST: Could not fetch payment method name, using ID:', paymentMethod)
+        paymentMethodName = paymentMethod.toString()
+      }
+    }
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       console.log('Orders POST: Invalid items')
@@ -122,47 +140,56 @@ export async function POST(request: Request) {
     // Create order with generated UUID
     console.log('Orders POST: Creating order in database')
     const orderId = randomUUID();
-    const orderData = {
-      id: orderId,
-      userId: decoded.userId,
-      total: total.toString(),
-      shippingAddress,
-      paymentMethod: paymentMethod || null,
-      paymentPlan: paymentPlan || null,
-      status: 'pending' as const
-    }
-    console.log('Orders POST: Order data:', orderData)
 
     try {
-      const insertResult = await db.insert(orders).values(orderData);
-      console.log('Orders POST: Order insert result:', insertResult);
-      // Fetch the inserted order for debugging
-      const [insertedOrder] = await db.select().from(orders).where(eq(orders.id, orderId));
-      console.log('Orders POST: Inserted order:', insertedOrder);
+      console.log('Orders POST: Creating order in database')
+      const createdOrder = await prisma.order.create({
+        data: {
+          id: orderId,
+          userId: decoded.userId,
+          total: total.toString(),
+          shippingAddress,
+          paymentMethod: paymentMethodName,
+          paymentPlan: paymentPlan || null,
+          status: 'PENDING'
+        }
+      })
+      console.log('Orders POST: Order created successfully:', createdOrder)
     } catch (err) {
-      console.error('Orders POST: Error during order insert:', err);
+      console.error('Orders POST: Error during order creation:', err);
       throw err;
     }
 
     // Create order items
     try {
       console.log('Orders POST: Creating order items')
-      const orderItemsResult = await db.insert(orderItems).values(
-        items.map(item => ({
-          orderId: orderId,
-          productId: parseInt(item.id.toString()), // Ensure integer type
-          quantity: parseInt(item.quantity.toString()), // Ensure integer type
-          priceAtTime: item.price.toString() // Ensure string for numeric type
-        }))
-      )
-      console.log('Orders POST: Order items insert result:', orderItemsResult);
+      const orderItemsData = items.map(item => ({
+        orderId: orderId,
+        productId: parseInt(item.id.toString()),
+        quantity: parseInt(item.quantity.toString()),
+        priceAtTime: item.price.toString()
+      }))
+      
+      const createdOrderItems = await prisma.orderItem.createMany({
+        data: orderItemsData
+      })
+      console.log('Orders POST: Order items created successfully:', createdOrderItems)
     } catch (err) {
-      console.error('Orders POST: Error during order items insert:', err);
+      console.error('Orders POST: Error during order items creation:', err);
       throw err;
     }
 
-    // Fetch and return the inserted order for debugging
-    const [finalOrder] = await db.select().from(orders).where(eq(orders.id, orderId));
+    // Fetch and return the completed order
+    const finalOrder = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        orderItems: {
+          include: {
+            product: true
+          }
+        }
+      }
+    })
     console.log('Orders POST: Order completed successfully, returning:', finalOrder);
     return NextResponse.json({ success: true, orderId, order: finalOrder })
   } catch (error) {

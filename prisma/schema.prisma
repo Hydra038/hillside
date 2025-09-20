@@ -71,7 +71,8 @@ model OrderItem {
   orderId     String  @map("order_id")
   productId   Int     @map("product_id")
   quantity    Int
-  priceAtTime Decimal @db.Decimal(10, 2) @map("price_at_time")
+  priceAtTime Decimal @db.Decimal(10, 2) @map("price")
+  createdAt   DateTime @default(now()) @map("created_at")
 
   // Relations
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
