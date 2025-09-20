@@ -13,25 +13,25 @@ export default function HomeContent({ featuredProducts }: HomeContentProps) {
       {/* Hero Section with Background Image */}
       <section className="relative bg-gray-900 text-white py-20 min-h-[70vh] lg:min-h-[600px] flex items-center overflow-hidden">
         {/* Background Image with subtle parallax effect */}
-        <div 
+        <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat bg-fixed transform scale-105"
           style={{
             backgroundImage: `url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&h=1080&fit=crop&auto=format&q=80')`,
           }}
         ></div>
-        
+
         {/* Gradient overlay for better text readability */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/30"></div>
-        
+
         {/* Content */}
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center lg:text-left">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-shadow-xl leading-tight">
-              Premium Quality Firewood 
+              Premium Quality Firewood
               <span className="block text-amber-400">Delivered to Your Door</span>
             </h1>
             <p className="text-lg md:text-xl mb-8 text-shadow max-w-2xl mx-auto lg:mx-0 leading-relaxed">
-              Sustainable, seasoned firewood for your home and outdoor needs. 
+              Sustainable, seasoned firewood for your home and outdoor needs.
               Perfect for cozy nights and memorable gatherings.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
@@ -56,7 +56,7 @@ export default function HomeContent({ featuredProducts }: HomeContentProps) {
             </div>
           </div>
         </div>
-        
+
         {/* Decorative elements */}
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white via-white/80 to-transparent"></div>
       </section>
