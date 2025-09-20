@@ -26,11 +26,12 @@ export default function ContactMessagesAdmin() {
       .then(data => {
         if (Array.isArray(data)) {
           setMessages(data);
+          setFetchError(null);
         } else {
-          setFetchError(data?.error || 'Unexpected response');
+          setFetchError('Unable to load messages');
         }
       })
-      .catch(err => setFetchError('Failed to fetch messages'))
+      .catch(err => setFetchError('Unable to load messages'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -49,14 +50,26 @@ export default function ContactMessagesAdmin() {
     }
   }
 
-  if (loading) return <div>Loading contact messages...</div>;
-  if (fetchError) return <div className="text-red-600">{fetchError}</div>;
+  if (loading) return <div className="text-center text-gray-600 py-8">📬 Loading messages...</div>;
+  if (fetchError) return (
+    <section id="contact-messages" className="bg-white/80 backdrop-blur-lg p-8 rounded-2xl shadow-lg mb-8">
+      <h2 className="text-2xl font-bold mb-6 text-amber-700">Contact Messages</h2>
+      <div className="text-center text-gray-500 py-8">
+        <div className="text-4xl mb-4">📬</div>
+        <p>Unable to load messages right now. Please try refreshing the page.</p>
+      </div>
+    </section>
+  );
 
   return (
     <section id="contact-messages" className="bg-white/80 backdrop-blur-lg p-8 rounded-2xl shadow-lg mb-8">
       <h2 className="text-2xl font-bold mb-6 text-amber-700">Contact Messages</h2>
       {messages.length === 0 ? (
-        <div>No contact messages yet.</div>
+        <div className="text-center text-gray-500 py-8">
+          <div className="text-4xl mb-4">📬</div>
+          <p>No customer messages yet.</p>
+          <p className="text-sm mt-2">Messages from your contact form will appear here.</p>
+        </div>
       ) : (
         <div className="space-y-6">
           {messages.map(msg => (
@@ -96,7 +109,7 @@ export default function ContactMessagesAdmin() {
                     {status[msg.id] === 'sending' ? 'Sending...' : 'Send Reply'}
                   </button>
                   {status[msg.id] === 'sent' && <span className="ml-2 text-green-600">Reply sent!</span>}
-                  {status[msg.id] === 'error' && <span className="ml-2 text-red-600">Error sending reply.</span>}
+                  {status[msg.id] === 'error' && <span className="ml-2 text-red-600">Unable to send reply. Please try again.</span>}
                 </div>
               )}
             </div>

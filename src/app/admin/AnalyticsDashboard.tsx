@@ -67,8 +67,9 @@ export default function AnalyticsDashboard() {
     return (
       <div className="text-center py-12 text-gray-500">
         <div className="text-6xl mb-4">📊</div>
-        <h3 className="text-xl font-semibold mb-2">No Analytics Data</h3>
-        <p>Unable to load analytics data at this time.</p>
+        <h3 className="text-xl font-semibold mb-2">Getting Started</h3>
+        <p>Analytics will appear here once you have orders and customer activity.</p>
+        <p className="text-sm mt-2 text-gray-400">Your dashboard will show revenue, orders, and customer insights.</p>
       </div>
     )
   }
@@ -162,12 +163,12 @@ export default function AnalyticsDashboard() {
           {analytics.monthlyRevenue.map((month) => {
             const maxRevenue = Math.max(...analytics.monthlyRevenue.map(m => m.revenue))
             const width = maxRevenue > 0 ? (month.revenue / maxRevenue) * 100 : 0
-            
+
             return (
               <div key={month.month} className="flex items-center gap-4">
                 <div className="w-16 text-sm text-gray-600">{month.month}</div>
                 <div className="flex-1 bg-gray-200 rounded-full h-6 relative">
-                  <div 
+                  <div
                     className="bg-gradient-to-r from-amber-400 to-amber-600 h-6 rounded-full flex items-center justify-end pr-2"
                     style={{ width: `${width}%` }}
                   >

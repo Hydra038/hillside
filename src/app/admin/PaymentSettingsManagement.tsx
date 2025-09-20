@@ -50,11 +50,11 @@ export default function PaymentSettingsManagement() {
   const fetchPaymentMethods = async () => {
     try {
       const response = await fetch('/api/admin/payment-settings')
-      if (!response.ok) throw new Error('Failed to fetch payment methods')
+      if (!response.ok) throw new Error('Unable to load payment methods')
       const data = await response.json()
       setPaymentMethods(data)
     } catch (error) {
-      setError('Failed to load payment methods')
+      setError('Unable to load payment methods. Please try refreshing the page.')
       console.error('Error fetching payment methods:', error)
     } finally {
       setIsLoading(false)
@@ -67,10 +67,10 @@ export default function PaymentSettingsManagement() {
     setSuccess('')
 
     try {
-      const url = editingMethod 
+      const url = editingMethod
         ? `/api/admin/payment-settings/${editingMethod.id}`
         : '/api/admin/payment-settings'
-      
+
       const method = editingMethod ? 'PUT' : 'POST'
       // Map displayName to display_name for backend compatibility
       const { displayName, ...rest } = formData;
@@ -85,13 +85,13 @@ export default function PaymentSettingsManagement() {
       })
 
       if (!response.ok) {
-        let msg = 'Failed to save payment method'
+        let msg = 'Unable to save payment method'
         try {
           const data = await response.json()
           if (data?.error) msg += `: ${data.error}`
-        } catch {}
+        } catch { }
         setError(msg)
-        throw new Error(msg)
+        return
       }
 
       setSuccess(editingMethod ? 'Payment method updated!' : 'Payment method added!')
@@ -100,7 +100,7 @@ export default function PaymentSettingsManagement() {
       resetForm()
       fetchPaymentMethods()
     } catch (error) {
-      setError((error as any).message || 'Failed to save payment method')
+      setError('Unable to save payment method. Please try again.')
       console.error('Error saving payment method:', error)
     }
   }
@@ -113,7 +113,7 @@ export default function PaymentSettingsManagement() {
         method: 'DELETE'
       })
 
-      if (!response.ok) throw new Error('Failed to delete payment method')
+      if (!response.ok) throw new Error('Unable to delete payment method')
 
       setSuccess('Payment method deleted!')
       fetchPaymentMethods()
@@ -212,7 +212,7 @@ export default function PaymentSettingsManagement() {
           <h4 className="text-lg font-medium mb-4">
             {editingMethod ? 'Edit Payment Method' : 'Add New Payment Method'}
           </h4>
-          
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -221,7 +221,7 @@ export default function PaymentSettingsManagement() {
                 </label>
                 <select
                   value={formData.type}
-                  onChange={(e) => setFormData({...formData, type: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                   className="w-full border border-gray-300 rounded-md px-3 py-2"
                   required
                 >
@@ -232,7 +232,7 @@ export default function PaymentSettingsManagement() {
                   <option value="stripe">Stripe</option>
                 </select>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Display Name
@@ -240,7 +240,7 @@ export default function PaymentSettingsManagement() {
                 <input
                   type="text"
                   value={formData.displayName}
-                  onChange={(e) => setFormData({...formData, displayName: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
                   className="w-full border border-gray-300 rounded-md px-3 py-2"
                   required
                 />
@@ -253,7 +253,7 @@ export default function PaymentSettingsManagement() {
               </label>
               <textarea
                 value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 className="w-full border border-gray-300 rounded-md px-3 py-2"
                 rows={2}
               />
@@ -272,12 +272,12 @@ export default function PaymentSettingsManagement() {
                       value={formData.config.accountName}
                       onChange={(e) => setFormData({
                         ...formData,
-                        config: {...formData.config, accountName: e.target.value}
+                        config: { ...formData.config, accountName: e.target.value }
                       })}
                       className="w-full border border-gray-300 rounded-md px-3 py-2"
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Account Number
@@ -287,13 +287,13 @@ export default function PaymentSettingsManagement() {
                       value={formData.config.accountNumber}
                       onChange={(e) => setFormData({
                         ...formData,
-                        config: {...formData.config, accountNumber: e.target.value}
+                        config: { ...formData.config, accountNumber: e.target.value }
                       })}
                       className="w-full border border-gray-300 rounded-md px-3 py-2"
                     />
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -304,12 +304,12 @@ export default function PaymentSettingsManagement() {
                       value={formData.config.sortCode}
                       onChange={(e) => setFormData({
                         ...formData,
-                        config: {...formData.config, sortCode: e.target.value}
+                        config: { ...formData.config, sortCode: e.target.value }
                       })}
                       className="w-full border border-gray-300 rounded-md px-3 py-2"
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Reference
@@ -319,7 +319,7 @@ export default function PaymentSettingsManagement() {
                       value={formData.config.reference}
                       onChange={(e) => setFormData({
                         ...formData,
-                        config: {...formData.config, reference: e.target.value}
+                        config: { ...formData.config, reference: e.target.value }
                       })}
                       className="w-full border border-gray-300 rounded-md px-3 py-2"
                     />
@@ -339,7 +339,7 @@ export default function PaymentSettingsManagement() {
                   value={formData.config.email}
                   onChange={(e) => setFormData({
                     ...formData,
-                    config: {...formData.config, email: e.target.value}
+                    config: { ...formData.config, email: e.target.value }
                   })}
                   className="w-full border border-gray-300 rounded-md px-3 py-2"
                 />
@@ -354,7 +354,7 @@ export default function PaymentSettingsManagement() {
                 value={formData.config.instructions}
                 onChange={(e) => setFormData({
                   ...formData,
-                  config: {...formData.config, instructions: e.target.value}
+                  config: { ...formData.config, instructions: e.target.value }
                 })}
                 className="w-full border border-gray-300 rounded-md px-3 py-2"
                 rows={3}
@@ -367,7 +367,7 @@ export default function PaymentSettingsManagement() {
                 type="checkbox"
                 id="enabled"
                 checked={formData.enabled}
-                onChange={(e) => setFormData({...formData, enabled: e.target.checked})}
+                onChange={(e) => setFormData({ ...formData, enabled: e.target.checked })}
                 className="mr-2"
               />
               <label htmlFor="enabled" className="text-sm font-medium text-gray-700">
@@ -408,17 +408,16 @@ export default function PaymentSettingsManagement() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
                     <h4 className="font-medium text-lg">{method.displayName}</h4>
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      method.enabled 
-                        ? 'bg-green-100 text-green-800' 
+                    <span className={`px-2 py-1 rounded-full text-xs ${method.enabled
+                        ? 'bg-green-100 text-green-800'
                         : 'bg-red-100 text-red-800'
-                    }`}>
+                      }`}>
                       {method.enabled ? 'Enabled' : 'Disabled'}
                     </span>
                   </div>
                   <p className="text-gray-600 text-sm mb-2">{method.description}</p>
                   <p className="text-xs text-gray-500">Type: {method.type}</p>
-                  
+
                   {/* Display method-specific details */}
                   {method.type === 'bank_transfer' && method.config && (
                     <div className="mt-2 text-sm text-gray-600">
@@ -428,15 +427,14 @@ export default function PaymentSettingsManagement() {
                     </div>
                   )}
                 </div>
-                
+
                 <div className="flex gap-2">
                   <button
                     onClick={() => toggleEnabled(method.id, !method.enabled)}
-                    className={`px-3 py-1 rounded text-sm ${
-                      method.enabled
+                    className={`px-3 py-1 rounded text-sm ${method.enabled
                         ? 'bg-red-100 text-red-700 hover:bg-red-200'
                         : 'bg-green-100 text-green-700 hover:bg-green-200'
-                    }`}
+                      }`}
                   >
                     {method.enabled ? 'Disable' : 'Enable'}
                   </button>

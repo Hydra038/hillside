@@ -36,13 +36,13 @@ export default function AddProductForm() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to create product");
+        throw new Error("Unable to create product at this time");
       }
 
       event.currentTarget.reset();
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create product");
+      setError(err instanceof Error ? err.message : "Unable to create product at this time. Please try again.");
     } finally {
       setIsLoading(false);
     }

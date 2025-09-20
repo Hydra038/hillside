@@ -26,9 +26,9 @@ export default function UsersManagement() {
       const res = await fetch("/api/admin/users");
       const data = await res.json();
       if (res.ok) setUsers(data.users);
-      else setError(data.error || "Failed to fetch users");
+      else setError(data.error || "Unable to load users");
     } catch (e) {
-      setError("Failed to fetch users");
+      setError("Unable to load users");
     } finally {
       setLoading(false);
     }
@@ -68,6 +68,12 @@ export default function UsersManagement() {
       {error && <div className="text-red-600">{error}</div>}
       {loading ? (
         <div>Loading users...</div>
+      ) : users.length === 0 ? (
+        <div className="text-center py-12 text-gray-500">
+          <div className="text-4xl mb-4">👥</div>
+          <h3 className="text-xl font-semibold mb-2">No Users Yet</h3>
+          <p>User accounts will appear here when customers sign up.</p>
+        </div>
       ) : (
         <div className="overflow-x-auto bg-white rounded-lg shadow">
           <table className="min-w-full divide-y divide-gray-200">

@@ -1,5 +1,6 @@
-import { db } from '@/lib/db'
-import { products } from '@/lib/db/schema.mysql'
+'use client'
+
+import { useState, useEffect } from 'react'
 import ProductList from './ProductList'
 import AddProductForm from './AddProductForm'
 import OrdersManagement from './OrdersManagement'
@@ -10,22 +11,43 @@ import PaymentSettingsManagement from './PaymentSettingsManagement'
 import UsersManagement from './users/page'
 import AdminGuard from '@/components/AdminGuard'
 
-// Force dynamic rendering to avoid database connection issues during build
-export const dynamic = 'force-dynamic'
+export default function AdminDashboardPage() {
+  const [products, setProducts] = useState([])
+  const [loading, setLoading] = useState(true)
 
-export default async function AdminDashboardPage() {
-  // Fetch products using Drizzle MySQL
-  const dbProducts = await db.select().from(products);
-  const allProducts = dbProducts.map(product => ({
-    id: product.id,
-    name: product.name,
-    description: product.description,
-    price: product.price?.toString?.() ?? '',
-    imageUrl: product.image_url || undefined,
-    category: product.category,
-    stockQuantity: product.stock_quantity,
-  createdAt: product.createdAt
-  }));
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        console.log('Fetching products from API...')
+        const response = await fetch('/api/products')
+        console.log('Products API response status:', response.status)
+
+        if (response.ok) {
+          const data = await response.json()
+          console.log('Products data received:', data.length, 'products')
+          setProducts(data) // API returns array directly, not wrapped in products property
+        } else {
+          console.error('Failed to fetch products:', response.status)
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProducts()
+  }, [])
+
+  if (loading) {
+    return (
+      <AdminGuard>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-amber-600"></div>
+        </div>
+      </AdminGuard>
+    )
+  }
 
   return (
     <AdminGuard>
@@ -74,7 +96,7 @@ export default async function AdminDashboardPage() {
           </section>
           <section className="bg-white/80 backdrop-blur-lg p-8 rounded-2xl shadow-lg">
             <h2 className="text-xl font-bold mb-4 text-amber-700">Current Products</h2>
-            <ProductList products={allProducts} />
+            <ProductList products={products} />
           </section>
         </main>
       </div>

@@ -9,8 +9,8 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
   const router = useRouter()
 
   useEffect(() => {
-    if (!loading && (!user || user.role !== 'admin')) {
-      router.push('/')
+    if (!loading && (!user || user.role !== 'ADMIN')) {
+      router.push('/signin?redirect=/admin')
     }
   }, [user, loading, router])
 
@@ -22,7 +22,7 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
     )
   }
 
-  if (!user || user.role !== 'admin') {
+  if (!user || user.role !== 'ADMIN') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

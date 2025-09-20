@@ -20,7 +20,7 @@ export async function POST(request: Request) {
       );
     }
     console.log('JWT_SECRET present:', true);
-    
+
     // Validate request body
     if (!request.body) {
       console.error('Request body is missing');
@@ -48,8 +48,7 @@ export async function POST(request: Request) {
         name: true,
         email: true,
         password: true,
-        role: true,
-        createdAt: true
+        role: true
       }
     });
     console.log('User found:', !!user)
@@ -71,7 +70,7 @@ export async function POST(request: Request) {
 
     // Generate JWT token
     const token = jwt.sign(
-      { 
+      {
         userId: user.id,
         email: user.email,
         role: user.role
@@ -82,7 +81,7 @@ export async function POST(request: Request) {
 
     // Create response with user data (excluding password)
     const { password: _, ...userWithoutPassword } = user;
-    
+
     // Create the response object
     const response = NextResponse.json({
       user: userWithoutPassword,

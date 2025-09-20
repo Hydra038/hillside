@@ -17,7 +17,7 @@ export default function SignInPage() {
     email: '',
     password: ''
   })
-  
+
   const redirect = searchParams.get('redirect') || '/'
 
   // Don't render the form if user is authenticated
@@ -59,9 +59,9 @@ export default function SignInPage() {
 
     try {
       const userResult = await signIn(formData.email, formData.password)
-      
+
       // Check if user is admin and redirect to admin dashboard
-      if (userResult?.role === 'admin') {
+      if (userResult?.role === 'ADMIN') {
         router.push('/admin')
         return
       }
@@ -100,7 +100,7 @@ export default function SignInPage() {
               <p className="text-amber-300 text-sm mt-1">Premium Quality Firewood</p>
             </div>
           </div>
-          
+
           <h2 className="text-2xl font-bold text-white mb-2">
             Welcome Back
           </h2>
@@ -258,7 +258,7 @@ export default function SignInPage() {
                 </svg>
                 Create New Account
               </Link>
-              
+
               <div className="flex justify-center space-x-4 text-sm">
                 <Link href="/" className="text-gray-600 hover:text-gray-700 font-medium transition-colors duration-200">
                   ← Back to Home

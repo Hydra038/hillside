@@ -79,8 +79,8 @@ export default function OrdersManagement() {
 
       if (response.ok) {
         // Update local state
-        setOrders(orders.map(order => 
-          order.id === orderId 
+        setOrders(orders.map(order =>
+          order.id === orderId
             ? { ...order, status: newStatus as any }
             : order
         ))
@@ -161,7 +161,7 @@ export default function OrdersManagement() {
 
   const filteredOrders = orders.filter(order => {
     const matchesFilter = filter === 'all' || order.status === filter
-    const matchesSearch = !searchTerm || 
+    const matchesSearch = !searchTerm ||
       order.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.id.toLowerCase().includes(searchTerm.toLowerCase())
@@ -181,21 +181,20 @@ export default function OrdersManagement() {
   return (
     <div className="space-y-6">
       {/* Enhanced Stats */}
-  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
         {['all', 'pending', 'processing', 'shipped', 'delivered'].map(status => {
-          const count = status === 'all' 
-            ? orders.length 
+          const count = status === 'all'
+            ? orders.length
             : orders.filter(o => o.status === status).length
-          
+
           return (
             <button
               key={status}
               onClick={() => setFilter(status)}
-              className={`p-3 rounded-lg text-center transition-colors ${
-                filter === status 
-                  ? 'bg-amber-100 text-amber-800 border-2 border-amber-300' 
+              className={`p-3 rounded-lg text-center transition-colors ${filter === status
+                  ? 'bg-amber-100 text-amber-800 border-2 border-amber-300'
                   : 'bg-gray-50 hover:bg-gray-100'
-              }`}
+                }`}
             >
               <div className="text-2xl font-bold">{count}</div>
               <div className="text-sm capitalize">{status}</div>
@@ -205,7 +204,7 @@ export default function OrdersManagement() {
       </div>
 
       {/* Search and Actions Bar */}
-  <div className="bg-white p-4 rounded-lg shadow flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
+      <div className="bg-white p-4 rounded-lg shadow flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
         <div className="flex flex-col md:flex-row gap-4 flex-1">
           <input
             type="text"
@@ -221,7 +220,7 @@ export default function OrdersManagement() {
             📊 Export CSV
           </button>
         </div>
-        
+
         {selectedOrders.size > 0 && (
           <div className="flex gap-2">
             <span className="text-sm text-gray-600 flex items-center">
@@ -246,7 +245,7 @@ export default function OrdersManagement() {
       <div className="bg-white rounded-lg shadow overflow-x-auto">
         <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
           <h3 className="text-lg font-medium">
-            {filter === 'all' ? 'All Orders' : `${filter.charAt(0).toUpperCase() + filter.slice(1)} Orders`} 
+            {filter === 'all' ? 'All Orders' : `${filter.charAt(0).toUpperCase() + filter.slice(1)} Orders`}
             ({filteredOrders.length})
           </h3>
         </div>
@@ -277,8 +276,7 @@ export default function OrdersManagement() {
                 <tr
                   key={order.id}
                   className={
-                    `transition-colors duration-150 ${
-                      idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                    `transition-colors duration-150 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'
                     } hover:bg-amber-50`
                   }
                 >
@@ -354,9 +352,20 @@ export default function OrdersManagement() {
 
         {filteredOrders.length === 0 && (
           <div className="text-center py-12">
+            <div className="text-4xl mb-4">📦</div>
             <div className="text-gray-500">
-              {searchTerm ? `No orders found matching "${searchTerm}"` : 
-               filter === 'all' ? 'No orders found' : `No ${filter} orders found`}
+              {searchTerm ? `🔍 No orders found matching "${searchTerm}"` :
+                filter === 'all' ? (
+                  <div>
+                    <p className="text-lg mb-2">No orders yet</p>
+                    <p className="text-sm">Orders from customers will appear here when they make purchases.</p>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-lg mb-2">No {filter} orders</p>
+                    <p className="text-sm">No orders are currently in {filter} status.</p>
+                  </div>
+                )}
             </div>
           </div>
         )}
@@ -391,7 +400,7 @@ export default function OrdersManagement() {
                     <div><strong>Name:</strong> {selectedOrder.user?.name || 'Unknown'}</div>
                     <div><strong>Email:</strong> {selectedOrder.user?.email || 'No email'}</div>
                     <div><strong>Order Date:</strong> {new Date(selectedOrder.createdAt).toLocaleString()}</div>
-                    <div><strong>Status:</strong> 
+                    <div><strong>Status:</strong>
                       <span className={`ml-2 px-2 py-1 rounded text-xs ${getStatusColor(selectedOrder.status)}`}>
                         {selectedOrder.status}
                       </span>
@@ -454,7 +463,7 @@ export default function OrdersManagement() {
                     </div>
                   </div>
                 ) : (
-                  <div className="text-gray-500">No items found</div>
+                  <div className="text-gray-500">✅ No order items to display</div>
                 )}
               </div>
             </div>

@@ -1,15 +1,13 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { db } from '@/lib/db'
-import { users, orders } from '@/lib/db/schema.mysql'
-import { eq, sql } from 'drizzle-orm'
+import { prisma } from '@/lib/prisma'
 import jwt from 'jsonwebtoken'
 
 export async function GET() {
   try {
     // Verify admin authentication
-  const cookieStore = await cookies();
-  const token = cookieStore.get('auth-token')?.value
+    const cookieStore = await cookies();
+    const token = cookieStore.get('auth-token')?.value
 
     if (!token) {
       return NextResponse.json(
@@ -20,40 +18,48 @@ export async function GET() {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
       role: string;
+      userId: string;
+      email: string;
     }
 
-    if (decoded.role !== 'admin') {
+    if (decoded.role !== 'ADMIN') {
       return NextResponse.json(
         { error: 'Admin access required' },
         { status: 403 }
       )
     }
 
-    // Get all users with order statistics using raw SQL aggregates
-    const usersWithStats = await db
-      .select({
-        id: users.id,
-        name: users.name,
-        email: users.email,
-        role: users.role,
-        createdAt: users.createdAt,
-        orderCount: sql`COUNT(${orders.id})`,
-        totalSpent: sql`COALESCE(SUM(${orders.total}), 0)`,
-      })
-      .from(users)
-      .leftJoin(orders, eq(users.id, orders.userId))
-      .groupBy(users.id, users.name, users.email, users.role, users.createdAt)
+    // Get all users with order statistics
+    const usersData = await prisma.user.findMany({
+      include: {
+        orders: {
+          select: {
+            total: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    })
 
-    return NextResponse.json({ 
-      users: usersWithStats.map(user => ({
-        ...user,
-        totalSpent: user.totalSpent || '0'
-      }))
+    const usersWithStats = usersData.map((user: any) => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      createdAt: user.createdAt,
+      orderCount: user.orders.length,
+      totalSpent: user.orders.reduce((sum: number, order: any) => sum + Number(order.total), 0)
+    }))
+
+    return NextResponse.json({
+      users: usersWithStats
     })
   } catch (error) {
     console.error('Error fetching users:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch users' },
+      { error: 'Unable to load users' },
       { status: 500 }
     )
   }

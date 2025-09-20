@@ -50,10 +50,10 @@ export default function AdminSupportChat() {
             }))
           );
         } else {
-          setError(data?.error || 'Failed to load messages');
+          setError(data?.error || 'Unable to load support messages');
         }
       })
-      .catch(() => setError('Failed to load messages'))
+      .catch(() => setError('Unable to load support messages'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -81,9 +81,9 @@ export default function AdminSupportChat() {
   if (error) return <div className="text-red-600">{error}</div>;
 
   return (
-       <section className="bg-white/80 backdrop-blur-lg p-8 rounded-2xl shadow-lg mb-8 max-w-2xl">
+    <section className="bg-white/80 backdrop-blur-lg p-8 rounded-2xl shadow-lg mb-8 max-w-2xl">
       <h2 className="text-2xl font-bold mb-6 text-amber-700">Support Chat (All Users)</h2>
-         {/* Support chat UI only, no debug output */}
+      {/* Support chat UI only, no debug output */}
       {threads.length === 0 ? (
         <div>No support messages yet.</div>
       ) : (
@@ -126,7 +126,7 @@ export default function AdminSupportChat() {
                 {status[thread.user_id] === 'sending' ? 'Sending...' : 'Send'}
               </button>
               {status[thread.user_id] === 'sent' && <span className="ml-2 text-green-600">Reply sent!</span>}
-              {status[thread.user_id] === 'error' && <span className="ml-2 text-red-600">Error sending reply.</span>}
+              {status[thread.user_id] === 'error' && <span className="ml-2 text-red-600">Unable to send reply. Please try again.</span>}
             </form>
           </div>
         ))

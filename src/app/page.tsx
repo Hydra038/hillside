@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 
 export default async function Home() {
   let featuredProducts: Product[] = [];
-  
+
   try {
     // Fetch featured products directly from database using Prisma
     const dbProducts = await prisma.product.findMany({
@@ -24,7 +24,7 @@ export default async function Home() {
         createdAt: true
       }
     });
-    
+
     featuredProducts = dbProducts.map(product => ({
       id: product.id,
       name: product.name,

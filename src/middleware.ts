@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken'
 export function middleware(request: NextRequest) {
   // Log the current path
   console.log('Middleware executing for path:', request.nextUrl.pathname);
-  
+
   // Skip middleware for signin/signup API routes and public assets
   if (
     request.nextUrl.pathname.startsWith('/api/auth/signin') ||
@@ -36,13 +36,10 @@ export function middleware(request: NextRequest) {
   ]
 
   // Public paths that shouldn't redirect when authenticated
-  const publicPaths = ['/signin', '/signup', '/admin/signin']
-  
-  // Admin signin path
-  const isAdminSignin = request.nextUrl.pathname === '/admin/signin'
+  const publicPaths = ['/signin', '/signup']
 
   // Check if the path requires authentication
-  const requiresAuth = protectedPaths.some(path => 
+  const requiresAuth = protectedPaths.some(path =>
     request.nextUrl.pathname.startsWith(path)
   )
 
@@ -59,7 +56,7 @@ export function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith(path)
   )
 
-  console.log('Path:', request.nextUrl.pathname, 'Requires Auth:', requiresAuth, 'Is Public:', isPublicPath, 'Is Customer Only:', isCustomerOnlyPath, 'Is Admin Signin:', isAdminSignin)
+  console.log('Path:', request.nextUrl.pathname, 'Requires Auth:', requiresAuth, 'Is Public:', isPublicPath, 'Is Customer Only:', isCustomerOnlyPath)
 
   // Verify authentication
   const token = request.cookies.get('auth-token')?.value
@@ -82,15 +79,10 @@ export function middleware(request: NextRequest) {
     console.log('No token found')
     if (requiresAuth) {
       console.log('Redirecting to signin')
-      if (request.nextUrl.pathname.startsWith('/admin')) {
-        // Redirect to admin signin for admin paths
-        return NextResponse.redirect(new URL('/admin/signin', request.url))
-      } else {
-        // Redirect to regular signin for other protected paths
-        const signInUrl = new URL('/signin', request.url)
-        signInUrl.searchParams.set('redirect', request.nextUrl.pathname)
-        return NextResponse.redirect(signInUrl)
-      }
+      // Redirect to signin for all protected paths
+      const signInUrl = new URL('/signin', request.url)
+      signInUrl.searchParams.set('redirect', request.nextUrl.pathname)
+      return NextResponse.redirect(signInUrl)
     }
     return NextResponse.next()
   }
@@ -99,32 +91,26 @@ export function middleware(request: NextRequest) {
   console.log('Token found, user role:', userRole)
 
   // Redirect admin users away from customer-only pages
-  if (userRole === 'admin' && isCustomerOnlyPath) {
+  if (userRole === 'ADMIN' && isCustomerOnlyPath) {
     console.log('Admin user accessing customer page, redirecting to admin dashboard')
     return NextResponse.redirect(new URL('/admin', request.url))
   }
 
   // Redirect admin users from home page to admin dashboard
-  if (userRole === 'admin' && request.nextUrl.pathname === '/') {
+  if (userRole === 'ADMIN' && request.nextUrl.pathname === '/') {
     console.log('Admin user accessing home page, redirecting to admin dashboard')
     return NextResponse.redirect(new URL('/admin', request.url))
   }
 
   // Handle authenticated users accessing signin pages
-  if (isPublicPath || isAdminSignin) {
-    if (userRole === 'admin') {
+  if (isPublicPath) {
+    if (userRole === 'ADMIN') {
       console.log('Authenticated admin accessing signin page, redirecting to admin dashboard')
       return NextResponse.redirect(new URL('/admin', request.url))
-    } else if (!isAdminSignin) {
+    } else {
       console.log('Authenticated user accessing public path, redirecting to home')
       return NextResponse.redirect(new URL('/', request.url))
     }
-  }
-
-  // Prevent non-admin users from accessing admin signin
-  if (isAdminSignin && userRole && userRole !== 'admin') {
-    console.log('Non-admin user accessing admin signin, redirecting to regular signin')
-    return NextResponse.redirect(new URL('/signin', request.url))
   }
 
   return NextResponse.next()
@@ -134,24 +120,23 @@ export const config = {
   matcher: [
     // Home page (to redirect admin to dashboard)
     '/',
-    
+
     // Protected client routes
     '/account/:path*',
     '/admin/:path*',
     '/checkout/:path*',
-    
+
     // Customer-only routes (redirect admin away)
     '/shop/:path*',
     '/about/:path*',
     '/delivery/:path*',
     '/contact/:path*',
     '/products/:path*',
-    
+
     // Auth pages (to redirect when already authenticated)
     '/signin',
     '/signup',
-    '/admin/signin',
-    
+
     // Protected API routes
     '/api/orders/:path*',
     '/api/products/:path*'

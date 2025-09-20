@@ -1,9 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { db } from '@/lib/db';
-import { users } from '@/lib/db/schema.mysql';
-import { eq } from 'drizzle-orm';
+import { prisma } from '@/lib/prisma';
 import jwt from 'jsonwebtoken';
 
 export async function GET() {
@@ -31,27 +29,24 @@ export async function GET() {
     console.error("/api/auth/me: Decoded token missing userId", decoded);
     return NextResponse.json({ error: "Invalid token" }, { status: 401 });
   }
-  let userResults;
+  let user;
   try {
-    userResults = await db
-      .select({
-        id: users.id,
-        name: users.name,
-        email: users.email,
-        role: users.role,
-        createdAt: users.createdAt,
-        updatedAt: users.updatedAt
-      })
-      .from(users)
-      .where(eq(users.id, decoded.userId));
+    user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true
+      }
+    });
   } catch (err) {
     console.error("/api/auth/me: DB query failed", err);
     return NextResponse.json({ error: "Database error" }, { status: 500 });
   }
-  if (!userResults || userResults.length === 0) {
+  if (!user) {
     console.error("/api/auth/me: User not found for id", decoded.userId);
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
-  const userWithoutPassword = userResults[0];
-  return NextResponse.json({ user: userWithoutPassword }, { status: 200 });
+  return NextResponse.json({ user }, { status: 200 });
 }

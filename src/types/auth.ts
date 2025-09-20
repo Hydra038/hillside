@@ -14,7 +14,7 @@ export interface AuthResponse {
     id: string
     name: string
     email: string
-    role?: 'user' | 'admin'
+    role?: 'USER' | 'ADMIN'
   }
   token?: string
 }
