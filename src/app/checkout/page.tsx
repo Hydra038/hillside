@@ -45,14 +45,19 @@ export default function CheckoutPage() {
 	const [error, setError] = useState("");
 
 	useEffect(() => {
-		// Fetch payment methods from API
+		// Fetch payment methods from public API
 		async function fetchPaymentMethods() {
 			try {
-				const res = await fetch("/api/admin/payment-settings");
-				const data = await res.json();
-				// The API returns an array of enabled payment methods
-				setPaymentMethods(Array.isArray(data) ? data : []);
+				const res = await fetch("/api/payment-methods");
+				if (res.ok) {
+					const data = await res.json();
+					setPaymentMethods(Array.isArray(data) ? data : []);
+				} else {
+					console.error('Failed to fetch payment methods:', res.status);
+					setPaymentMethods([]);
+				}
 			} catch (err) {
+				console.error('Error fetching payment methods:', err);
 				setPaymentMethods([]);
 			}
 		}

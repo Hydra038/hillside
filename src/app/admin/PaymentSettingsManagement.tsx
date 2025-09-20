@@ -409,8 +409,8 @@ export default function PaymentSettingsManagement() {
                   <div className="flex items-center gap-2 mb-2">
                     <h4 className="font-medium text-lg">{method.displayName}</h4>
                     <span className={`px-2 py-1 rounded-full text-xs ${method.enabled
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-red-100 text-red-800'
                       }`}>
                       {method.enabled ? 'Enabled' : 'Disabled'}
                     </span>
@@ -432,8 +432,8 @@ export default function PaymentSettingsManagement() {
                   <button
                     onClick={() => toggleEnabled(method.id, !method.enabled)}
                     className={`px-3 py-1 rounded text-sm ${method.enabled
-                        ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                        : 'bg-green-100 text-green-700 hover:bg-green-200'
+                      ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                      : 'bg-green-100 text-green-700 hover:bg-green-200'
                       }`}
                   >
                     {method.enabled ? 'Disable' : 'Enable'}
