@@ -106,12 +106,25 @@ export default function CheckoutPage() {
 				body: JSON.stringify(orderPayload),
 				credentials: "include"
 			});
+			
 			if (!res.ok) {
-				const data = await res.json().catch(() => ({}));
-				setError(data.error || "Failed to place order");
+				let errorMessage = "Failed to place order";
+				try {
+					const data = await res.json();
+					errorMessage = data.error || errorMessage;
+				} catch (parseError) {
+					console.error('Error parsing response:', parseError);
+					errorMessage = `Server error (${res.status})`;
+				}
+				setError(errorMessage);
 				setIsLoading(false);
 				return;
 			}
+
+			// Success - get response data
+			const data = await res.json();
+			console.log('Order created successfully:', data);
+			
 			// Simulate loading for a few seconds before thank you
 			setTimeout(() => {
 				setIsLoading(false);
@@ -119,7 +132,8 @@ export default function CheckoutPage() {
 				router.push("/thank-you");
 			}, 2000);
 		} catch (err) {
-			setError("Failed to place order. Please try again.");
+			console.error('Order submission error:', err);
+			setError("Network error. Please check your connection and try again.");
 			setIsLoading(false);
 		}
 	}
@@ -261,9 +275,18 @@ export default function CheckoutPage() {
 								})()
 							)}
 						</div>
-						{error && <div className="text-red-600 font-semibold text-center mt-4">{error}</div>}
-						<button type="submit" className="w-full bg-gradient-to-r from-amber-500 to-amber-700 text-white py-5 px-8 rounded-2xl font-bold text-xl shadow-xl hover:from-amber-600 hover:to-amber-800 transition-colors disabled:bg-amber-400 mt-6" disabled={isLoading}>
-							{isLoading ? "Processing..." : "Place Order"}
+						{error && (
+							<div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mt-4">
+								<div className="font-semibold">Error</div>
+								<div>{error}</div>
+							</div>
+						)}
+						<button 
+							type="submit" 
+							className="w-full bg-gradient-to-r from-amber-500 to-amber-700 text-white py-5 px-8 rounded-2xl font-bold text-xl shadow-xl hover:from-amber-600 hover:to-amber-800 transition-colors disabled:bg-amber-400 disabled:cursor-not-allowed mt-6" 
+							disabled={isLoading}
+						>
+							{isLoading ? "Processing Order..." : "Place Order"}
 						</button>
 					</form>
 					<div className="bg-white p-6 rounded-2xl shadow-2xl border border-amber-100 max-h-80 overflow-auto">
