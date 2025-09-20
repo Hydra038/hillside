@@ -1,40 +1,68 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Product } from '@/types/product';
 import Image from 'next/image';
 import Link from 'next/link';
 import ProductFilters from '@/components/ProductFilters';
 
-// Sample products data (will be replaced with API call)
-const products: Product[] = [
-  {
-    id: 1,
-    name: 'Premium Hardwood Logs',
-    description: 'High-quality, seasoned hardwood logs perfect for long-lasting heat.',
-    price: '120.00',
-    category: 'hardwood',
-    imageUrl: '/images/products/hardwood-logs.jpg',
-    stockQuantity: 100,
-    isFeatured: false,
-    createdAt: new Date(),
-  },
-  {
-    id: 2,
-    name: 'Softwood Kindling',
-    description: 'Dry, easy-to-light kindling perfect for starting your fire.',
-    price: '45.00',
-    category: 'kindling',
-    imageUrl: '/images/products/kindling.jpg',
-    stockQuantity: 150,
-    isFeatured: false,
-    createdAt: new Date(),
-  },
-  // Add more products here
-];
-
 export default function ProductsPage() {
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>(products);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        const response = await fetch('/api/products');
+        if (!response.ok) {
+          throw new Error('Failed to fetch products');
+        }
+        const data = await response.json();
+        setProducts(data);
+        setFilteredProducts(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+        console.error('Error fetching products:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchProducts();
+  }, []);
+
+  if (loading) {
+    return (
+      <main className="bg-white min-h-screen">
+        <div className="mx-auto max-w-2xl px-2 py-8 sm:px-4 sm:py-12 md:py-16 lg:max-w-7xl lg:px-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-amber-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading products...</p>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="bg-white min-h-screen">
+        <div className="mx-auto max-w-2xl px-2 py-8 sm:px-4 sm:py-12 md:py-16 lg:max-w-7xl lg:px-8">
+          <div className="text-center">
+            <p className="text-red-600">Error loading products: {error}</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="mt-4 bg-amber-600 text-white px-4 py-2 rounded hover:bg-amber-700"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="bg-white min-h-screen">
