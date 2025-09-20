@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { db } from '@/lib/db'
-import { orders, orderItems, products, users } from '@/lib/db/schema.mysql'
-import { eq } from 'drizzle-orm'
+import { prisma } from '@/lib/prisma'
 import jwt from 'jsonwebtoken'
 import { sendEmail, generateShippingNotificationEmailHtml, ShippingNotificationData } from '@/lib/send-email'
 
@@ -76,15 +74,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
 
     // Update order status
-    let updateResult;
+    let updatedOrder;
     try {
-      updateResult = await db
-        .update(orders)
-        .set({ 
+      updatedOrder = await prisma.order.update({
+        where: { id },
+        data: { 
           status,
           updatedAt: new Date()
-        })
-        .where(eq(orders.id, id));
+        }
+      });
     } catch (dbErr) {
       console.error('PATCH /api/admin/orders/[id]: DB update error', dbErr);
       return NextResponse.json(
@@ -93,27 +91,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       );
     }
 
-    const affectedRows = updateResult[0]?.affectedRows ?? 0;
-    if (affectedRows === 0) {
+    if (!updatedOrder) {
       console.error('PATCH /api/admin/orders/[id]: No order found to update', id);
       return NextResponse.json(
         { error: 'Order not found' },
         { status: 404 }
-      );
-    }
-
-    // Fetch updated order
-    let updatedOrder;
-    try {
-      updatedOrder = await db
-        .select()
-        .from(orders)
-        .where(eq(orders.id, id));
-    } catch (fetchErr) {
-      console.error('PATCH /api/admin/orders/[id]: Error fetching updated order', fetchErr);
-      return NextResponse.json(
-        { error: 'Failed to fetch updated order' },
-        { status: 500 }
       );
     }
 
@@ -123,40 +105,34 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (status === 'shipped') {
       try {
         // Get order with user details for email
-        const orderForEmail = await db
-          .select({
-            id: orders.id,
-            total: orders.total,
-            createdAt: orders.createdAt,
-            shippingAddress: orders.shippingAddress,
-            userName: users.name,
-            userEmail: users.email,
-          })
-          .from(orders)
-          .leftJoin(users, eq(orders.userId, users.id))
-          .where(eq(orders.id, id))
-          .limit(1);
+        const orderForEmail = await prisma.order.findUnique({
+          where: { id },
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true
+              }
+            },
+            orderItems: {
+              include: {
+                product: {
+                  select: {
+                    name: true
+                  }
+                }
+              }
+            }
+          }
+        });
 
-        // Get order items for email
-        const emailOrderItems = await db
-          .select({
-            quantity: orderItems.quantity,
-            priceAtTime: orderItems.priceAtTime,
-            productName: products.name,
-          })
-          .from(orderItems)
-          .leftJoin(products, eq(orderItems.productId, products.id))
-          .where(eq(orderItems.orderId, id));
-
-        if (orderForEmail.length > 0 && orderForEmail[0].userEmail) {
-          const order = orderForEmail[0];
-          
+        if (orderForEmail?.user?.email) {
           // Parse shipping address
           let shippingAddress;
           try {
-            shippingAddress = typeof order.shippingAddress === 'string' 
-              ? JSON.parse(order.shippingAddress)
-              : order.shippingAddress;
+            shippingAddress = typeof orderForEmail.shippingAddress === 'string' 
+              ? JSON.parse(orderForEmail.shippingAddress)
+              : orderForEmail.shippingAddress;
           } catch {
             shippingAddress = {
               street: 'Address not available',
@@ -167,16 +143,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           }
 
           const emailData: ShippingNotificationData = {
-            customerName: order.userName || 'Valued Customer',
-            orderId: order.id.slice(0, 8),
-            orderDate: new Date(order.createdAt).toLocaleDateString('en-GB', {
+            customerName: orderForEmail.user.name || 'Valued Customer',
+            orderId: orderForEmail.id.slice(0, 8),
+            orderDate: new Date(orderForEmail.createdAt).toLocaleDateString('en-GB', {
               day: 'numeric',
               month: 'long',
               year: 'numeric'
             }),
-            total: Number(order.total).toFixed(2),
-            items: emailOrderItems.map(item => ({
-              name: item.productName || 'Product',
+            total: Number(orderForEmail.total).toFixed(2),
+            items: orderForEmail.orderItems.map(item => ({
+              name: item.product?.name || 'Product',
               quantity: item.quantity,
               price: Number(item.priceAtTime || 0).toFixed(2)
             })),
@@ -193,12 +169,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           const emailHtml = generateShippingNotificationEmailHtml(emailData);
           
           await sendEmail({
-            to: order.userEmail!,
+            to: orderForEmail.user.email,
             subject: '🚚 Your Firewood Order Has Shipped! - Hillside Logs Fuel',
             html: emailHtml
           });
 
-          console.log(`✅ Shipping notification email sent to ${order.userEmail} for order ${id}`);
+          console.log(`✅ Shipping notification email sent to ${orderForEmail.user.email} for order ${id}`);
         }
       } catch (emailError) {
         console.error('❌ Failed to send shipping notification email:', emailError);
@@ -208,7 +184,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     return NextResponse.json({ 
       success: true, 
-      order: updatedOrder[0]
+      order: updatedOrder
     });
   } catch (error) {
     console.error('PATCH /api/admin/orders/[id]: Unexpected error', error);
@@ -228,8 +204,8 @@ export async function GET(
     const { id } = await params;
     
     // Verify admin authentication
-  const cookieStore = await cookies();
-  const token = cookieStore.get('auth-token')?.value
+    const cookieStore = await cookies();
+    const token = cookieStore.get('auth-token')?.value
 
     if (!token) {
       return NextResponse.json(
@@ -250,62 +226,55 @@ export async function GET(
     }
 
     // Get specific order with user and order items details
-  const orderQuery = await db
-      .select({
-        id: orders.id,
-        userId: orders.userId,
-        total: orders.total,
-        status: orders.status,
-        shippingAddress: orders.shippingAddress,
-        createdAt: orders.createdAt,
-        updatedAt: orders.updatedAt,
-        userName: users.name,
-        userEmail: users.email,
-      })
-      .from(orders)
-      .leftJoin(users, eq(orders.userId, users.id))
-      .where(eq(orders.id, id))
-      .limit(1)
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true
+          }
+        },
+        orderItems: {
+          include: {
+            product: {
+              select: {
+                name: true,
+                price: true
+              }
+            }
+          }
+        }
+      }
+    });
 
-    if (orderQuery.length === 0) {
+    if (!order) {
       return NextResponse.json(
         { error: 'Order not found' },
         { status: 404 }
       )
     }
 
-    // Get order items with product details
-    const orderItemsQuery = await db
-      .select({
-        id: orderItems.id,
-        productId: orderItems.productId,
-        quantity: orderItems.quantity,
-        priceAtTime: orderItems.priceAtTime,
-        productName: products.name,
-        productPrice: products.price,
-      })
-      .from(orderItems)
-      .leftJoin(products, eq(orderItems.productId, products.id))
-      .where(eq(orderItems.orderId, id))
-
-    const order = orderQuery[0]
+    // Transform to match expected format
     const orderWithDetails = {
-      ...order,
-      user: {
-        name: order.userName,
-        email: order.userEmail,
-      },
-      items: orderItemsQuery.map(item => ({
-        id: item.id,
-        productId: item.productId,
+      id: order.id,
+      userId: order.userId,
+      total: order.total.toString(),
+      status: order.status,
+      shippingAddress: order.shippingAddress,
+      paymentMethod: order.paymentMethod,
+      paymentPlan: order.paymentPlan,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+      user: order.user,
+      items: order.orderItems.map(item => ({
+        id: item.id.toString(),
+        productId: item.productId.toString(),
         quantity: item.quantity,
-        priceAtTime: item.priceAtTime,
-        product: {
-          name: item.productName,
-          price: item.productPrice,
-        },
-      })),
-    }
+        priceAtTime: item.priceAtTime.toString(),
+        product: item.product
+      }))
+    };
 
     return NextResponse.json({ order: orderWithDetails })
   } catch (error) {

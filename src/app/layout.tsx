@@ -24,37 +24,16 @@ export const metadata: Metadata = {
   title: "Hillside Logs Fuel - Premium Quality Firewood",
   description: "Premium quality firewood delivered to your door. Sustainable, seasoned firewood for your home and outdoor needs from Hillside Logs Fuel.",
   manifest: "/manifest.json",
+  metadataBase: new URL('https://firewoodlogsfuel.com'),
   icons: {
-    icon: [
-      {
-        url: "/favicon.svg",
-        type: "image/svg+xml",
-        sizes: "any",
-      },
-      {
-        url: "/icon-32.svg",
-        type: "image/svg+xml",
-        sizes: "32x32",
-      },
-      {
-        url: "/favicon.ico",
-        sizes: "16x16 32x32",
-        type: "image/x-icon",
-      },
-    ],
-    apple: [
-      {
-        url: "/apple-touch-icon.svg",
-        type: "image/svg+xml",
-        sizes: "180x180",
-      },
-    ],
-    shortcut: "/favicon.svg",
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.svg",
+    shortcut: "/favicon.ico",
   },
   openGraph: {
     title: "Hillside Logs Fuel",
     description: "Premium quality firewood delivered to your door",
-    url: "https://hillsidelogsfuel.com",
+    url: "https://firewoodlogsfuel.com",
     siteName: "Hillside Logs Fuel",
     images: [
       {

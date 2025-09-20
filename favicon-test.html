@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Favicon Test - Hillside Logs Fuel</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/svg+xml" href="/icon.svg">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.svg">
+    <link rel="shortcut icon" href="/favicon.ico">
+</head>
+<body>
+    <h1>Favicon Test Page</h1>
+    <p>This page tests favicon loading for Hillside Logs Fuel</p>
+    <p>Check the browser tab for the favicon icon</p>
+    
+    <h2>Icon Links for Testing:</h2>
+    <ul>
+        <li><a href="/favicon.ico" target="_blank">favicon.ico</a></li>
+        <li><a href="/icon.svg" target="_blank">icon.svg</a></li>
+        <li><a href="/apple-touch-icon.svg" target="_blank">apple-touch-icon.svg</a></li>
+    </ul>
+    
+    <h2>Images to verify visually:</h2>
+    <p><strong>Favicon (32x32):</strong></p>
+    <img src="/icon.svg" width="32" height="32" alt="Favicon" style="border: 1px solid #ccc;">
+    
+    <p><strong>Apple Touch Icon (180x180):</strong></p>
+    <img src="/apple-touch-icon.svg" width="180" height="180" alt="Apple Touch Icon" style="border: 1px solid #ccc;">
+    
+    <script>
+        // Test favicon loading programmatically
+        function testFavicon() {
+            const favicon = document.querySelector('link[rel="icon"]');
+            if (favicon) {
+                console.log('Favicon link found:', favicon.href);
+                
+                // Test if the favicon actually loads
+                const img = new Image();
+                img.onload = () => console.log('✅ Favicon loaded successfully');
+                img.onerror = () => console.log('❌ Favicon failed to load');
+                img.src = favicon.href;
+            } else {
+                console.log('❌ No favicon link found');
+            }
+        }
+        
+        // Run test when page loads
+        window.addEventListener('load', testFavicon);
+    </script>
+</body>
+</html>

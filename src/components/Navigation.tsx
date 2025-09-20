@@ -56,6 +56,11 @@ export default function Navigation() {
     }
   }
 
+  // Helper function to close mobile menu when navigation links are clicked
+  const closeMobileMenu = () => {
+    setIsMenuOpen(false)
+  }
+
   return (
     <nav className="bg-white shadow-md">
       <div className="container mx-auto px-4">
@@ -114,7 +119,7 @@ export default function Navigation() {
                       My Account
                     </Link>
                   )}
-                {user.role === 'admin' && (
+                {user.role === 'ADMIN' && (
                   <Link 
                     href="/admin" 
                     className="text-purple-600 hover:text-purple-700 font-medium px-3 py-2 rounded-lg bg-purple-100 hover:bg-purple-200 transition"
@@ -170,29 +175,36 @@ export default function Navigation() {
                   <Link
                     href="/shop"
                     className={getMobileLinkClasses('/shop')}
+                    onClick={closeMobileMenu}
                   >
                     Shop
                   </Link>
                   <Link
                     href="/about"
                     className={getMobileLinkClasses('/about')}
+                    onClick={closeMobileMenu}
                   >
                     About
                   </Link>
                   <Link
                     href="/delivery"
                     className={getMobileLinkClasses('/delivery')}
+                    onClick={closeMobileMenu}
                   >
                     Delivery
                   </Link>
                   <Link
                     href="/contact"
                     className={getMobileLinkClasses('/contact')}
+                    onClick={closeMobileMenu}
                   >
                     Contact
                   </Link>
                   <button
-                    onClick={() => setIsCartOpen(true)}
+                    onClick={() => {
+                      setIsCartOpen(true)
+                      closeMobileMenu()
+                    }}
                     className="flex w-full items-center space-x-3 px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-amber-600 hover:bg-gray-50"
                   >
                     <div className="relative">
@@ -217,13 +229,15 @@ export default function Navigation() {
                   <Link
                     href="/account"
                     className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-amber-600 hover:bg-gray-50"
+                    onClick={closeMobileMenu}
                   >
                     My Account
                   </Link>
-                  {user.role === 'admin' && (
+                  {user.role === 'ADMIN' && (
                     <Link
                       href="/admin"
                       className="block px-3 py-2 rounded-md text-base font-medium text-purple-600 hover:text-purple-700 hover:bg-gray-50"
+                      onClick={closeMobileMenu}
                     >
                       Admin
                     </Link>
@@ -234,6 +248,7 @@ export default function Navigation() {
                 <Link
                   href="/signin"
                   className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-amber-600 hover:bg-gray-50"
+                  onClick={closeMobileMenu}
                 >
                   Sign In
                 </Link>
