@@ -11,6 +11,7 @@ export default async function Home() {
     const dbProducts = await prisma.product.findMany({
       where: { isFeatured: true },
       orderBy: { createdAt: 'desc' },
+      take: 3, // Limit to only 3 featured products
       select: {
         id: true,
         name: true,

@@ -48,51 +48,14 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
       )}
       
-      {/* Product Image with fallback */}
-      <div className="w-full h-48 bg-gray-200 overflow-hidden">
-        {product.imageUrl ? (
-          <img
-            src={product.imageUrl}
-            alt={product.name || 'Product image'}
-            className="w-full h-48 object-cover"
-            loading="lazy"
-            onError={(e) => {
-              // Fallback to default image if original fails
-              const target = e.target as HTMLImageElement;
-              if (target.src !== '/images/products/premium-firewood.jpg') {
-                target.src = '/images/products/premium-firewood.jpg';
-              } else {
-                // If even the fallback fails, hide the image and show a placeholder
-                target.style.display = 'none';
-                const placeholder = target.nextElementSibling as HTMLElement;
-                if (placeholder) placeholder.style.display = 'flex';
-              }
-            }}
-          />
-        ) : (
-          <div className="w-full h-48 flex items-center justify-center bg-gradient-to-br from-amber-100 to-amber-200">
-            <div className="text-center text-amber-700">
-              <svg className="w-16 h-16 mx-auto mb-2" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2L2 22h20L12 2zm0 3.5L19.5 20h-15L12 5.5z"/>
-                <path d="M11 14h2v2h-2v-2zm0-6h2v4h-2V8z"/>
-              </svg>
-              <p className="text-sm font-medium">Firewood</p>
-            </div>
-          </div>
-        )}
-        {/* Hidden placeholder for failed images */}
-        <div 
-          className="w-full h-48 items-center justify-center bg-gradient-to-br from-amber-100 to-amber-200 text-amber-700" 
-          style={{display: 'none'}}
-        >
-          <div className="text-center">
-            <svg className="w-16 h-16 mx-auto mb-2" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2L2 22h20L12 2zm0 3.5L19.5 20h-15L12 5.5z"/>
-            </svg>
-            <p className="text-sm font-medium">Firewood Product</p>
-          </div>
-        </div>
-      </div>
+      {product.imageUrl && (
+        <img
+          src={product.imageUrl}
+          alt={product.name || 'Product image'}
+          className="w-full h-48 object-cover"
+          loading="lazy"
+        />
+      )}
       
       <div className="p-4">
         <h3 className={`text-xl font-semibold mb-2 ${

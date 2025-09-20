@@ -52,7 +52,7 @@ export async function POST(request: Request) {
 
     // In a real application, send email here
     const baseUrl =
-      process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+      process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
     const verificationLink = `${baseUrl}/verify-email?token=${verificationToken}&email=${encodeURIComponent(
       email
     )}`;
