@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
+    "postinstall": "prisma generate",
     "db:push": "npx drizzle-kit push",
     "db:studio": "npx drizzle-kit studio",
     "db:migrate": "dotenv -- tsx src/lib/db/migrate.ts",
