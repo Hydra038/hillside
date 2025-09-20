@@ -7,8 +7,8 @@ import jwt from 'jsonwebtoken'
 export async function GET() {
   try {
     // Verify authentication
-  const cookieStore = await cookies();
-  const token = cookieStore.get('auth-token')?.value
+    const cookieStore = await cookies();
+    const token = cookieStore.get('auth-token')?.value
 
     if (!token) {
       return NextResponse.json(
@@ -58,10 +58,10 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     console.log('Orders POST: Starting order creation')
-    
+
     // Verify authentication
-  const cookieStore = await cookies();
-  const token = cookieStore.get('auth-token')?.value
+    const cookieStore = await cookies();
+    const token = cookieStore.get('auth-token')?.value
 
     if (!token) {
       console.log('Orders POST: No token found')
@@ -86,10 +86,10 @@ export async function POST(request: Request) {
 
     // Get order data from request
     const { items, total, shippingAddress, paymentMethod, paymentPlan } = await request.json()
-    
-    console.log('Orders POST: Received data:', { 
-      itemsCount: items?.length, 
-      total, 
+
+    console.log('Orders POST: Received data:', {
+      itemsCount: items?.length,
+      total,
       shippingAddress,
       paymentMethod,
       paymentPlan,
@@ -169,7 +169,7 @@ export async function POST(request: Request) {
         quantity: parseInt(item.quantity.toString()),
         priceAtTime: item.price.toString()
       }))
-      
+
       const createdOrderItems = await prisma.orderItem.createMany({
         data: orderItemsData
       })
@@ -179,19 +179,13 @@ export async function POST(request: Request) {
       throw err;
     }
 
-    // Fetch and return the completed order
-    const finalOrder = await prisma.order.findUnique({
-      where: { id: orderId },
-      include: {
-        orderItems: {
-          include: {
-            product: true
-          }
-        }
-      }
+    // Return success response with order ID
+    console.log('Orders POST: Order and items created successfully, returning success');
+    return NextResponse.json({ 
+      success: true, 
+      orderId,
+      message: 'Order created successfully'
     })
-    console.log('Orders POST: Order completed successfully, returning:', finalOrder);
-    return NextResponse.json({ success: true, orderId, order: finalOrder })
   } catch (error) {
     console.error('Orders POST: Error creating order:', error)
     return NextResponse.json(

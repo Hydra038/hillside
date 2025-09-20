@@ -32,10 +32,10 @@ export default function CheckoutPage() {
 			}));
 		}
 	}, [user]);
-	type PaymentMethod = { 
-		id: string; 
-		display_name?: string; 
-		type?: string; 
+	type PaymentMethod = {
+		id: string;
+		display_name?: string;
+		type?: string;
 		config?: any;
 		enabled?: number;
 		description?: string;
@@ -65,19 +65,19 @@ export default function CheckoutPage() {
 	}, []);
 
 	function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-			const { name, value } = e.target;
-			if (name.startsWith("address.")) {
-				setFormData((prev) => ({
-					...prev,
-					address: {
-						...prev.address,
-						[name.split(".")[1]]: value,
-					},
-				}));
-			} else {
-				setFormData((prev) => ({ ...prev, [name]: value }));
-			}
+		const { name, value } = e.target;
+		if (name.startsWith("address.")) {
+			setFormData((prev) => ({
+				...prev,
+				address: {
+					...prev.address,
+					[name.split(".")[1]]: value,
+				},
+			}));
+		} else {
+			setFormData((prev) => ({ ...prev, [name]: value }));
 		}
+	}
 
 	async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
@@ -167,37 +167,37 @@ export default function CheckoutPage() {
 								<label className="block text-base font-semibold text-amber-700 mb-2">Postal Code</label>
 								<input type="text" name="address.postcode" value={formData.address.postcode} onChange={handleChange} className="w-full border border-amber-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-500 bg-amber-50 text-lg" required />
 							</div>
-											<div>
-												<label className="block text-base font-semibold text-amber-700 mb-2">Country</label>
-												<input type="text" name="address.country" value={formData.address.country} readOnly className="w-full border border-amber-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-500 bg-amber-50 text-lg" required />
-											</div>
-																			<div>
-																				<label className="block text-base font-semibold text-amber-700 mb-2">Payment Plan</label>
-																				<div className="flex gap-4">
-																										<label className="flex items-center gap-2">
-																											<input
-																												type="radio"
-																												name="paymentPlan"
-																												value="full"
-																												checked={formData.paymentPlan === "full"}
-																												onChange={handleChange}
-																											/>
-																											<span>Full Payment</span>
-																											<span className="ml-2 text-amber-700 font-bold">£{typeof total === "number" ? total.toFixed(2) : "0.00"}</span>
-																										</label>
-																										<label className="flex items-center gap-2">
-																											<input
-																												type="radio"
-																												name="paymentPlan"
-																												value="half"
-																												checked={formData.paymentPlan === "half"}
-																												onChange={handleChange}
-																											/>
-																											<span>Half Payment</span>
-																											<span className="ml-2 text-amber-700 font-bold">£{typeof total === "number" ? (total / 2).toFixed(2) : "0.00"}</span>
-																										</label>
-																				</div>
-																			</div>
+							<div>
+								<label className="block text-base font-semibold text-amber-700 mb-2">Country</label>
+								<input type="text" name="address.country" value={formData.address.country} readOnly className="w-full border border-amber-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-500 bg-amber-50 text-lg" required />
+							</div>
+							<div>
+								<label className="block text-base font-semibold text-amber-700 mb-2">Payment Plan</label>
+								<div className="flex gap-4">
+									<label className="flex items-center gap-2">
+										<input
+											type="radio"
+											name="paymentPlan"
+											value="full"
+											checked={formData.paymentPlan === "full"}
+											onChange={handleChange}
+										/>
+										<span>Full Payment</span>
+										<span className="ml-2 text-amber-700 font-bold">£{typeof total === "number" ? total.toFixed(2) : "0.00"}</span>
+									</label>
+									<label className="flex items-center gap-2">
+										<input
+											type="radio"
+											name="paymentPlan"
+											value="half"
+											checked={formData.paymentPlan === "half"}
+											onChange={handleChange}
+										/>
+										<span>Half Payment</span>
+										<span className="ml-2 text-amber-700 font-bold">£{typeof total === "number" ? (total / 2).toFixed(2) : "0.00"}</span>
+									</label>
+								</div>
+							</div>
 						</div>
 						<div>
 							<label className="block text-base font-semibold text-amber-700 mb-2">Payment Method</label>
@@ -266,7 +266,7 @@ export default function CheckoutPage() {
 							{isLoading ? "Processing..." : "Place Order"}
 						</button>
 					</form>
-					  <div className="bg-white p-6 rounded-2xl shadow-2xl border border-amber-100 max-h-80 overflow-auto">
+					<div className="bg-white p-6 rounded-2xl shadow-2xl border border-amber-100 max-h-80 overflow-auto">
 						<h2 className="text-2xl font-bold text-amber-700 mb-6">Order Summary</h2>
 						<div className="space-y-4">
 							{items.map((item) => (
