@@ -22,6 +22,7 @@ export interface InvoiceData {
   tax?: string;
   total: string;
   paymentMethod?: string;
+  paymentPlan?: string;
   notes?: string;
 }
 
@@ -238,7 +239,8 @@ export function generateInvoiceHTML(data: InvoiceData): string {
             <p>${data.shippingAddress.city}</p>
             <p>${data.shippingAddress.postcode}</p>
             <p>${data.shippingAddress.country}</p>
-            ${data.paymentMethod ? `<p><strong>Payment:</strong> ${data.paymentMethod}</p>` : ''}
+            ${data.paymentMethod ? `<p><strong>Payment Method:</strong> ${data.paymentMethod}</p>` : ''}
+            ${data.paymentPlan ? `<p><strong>Payment Plan:</strong> ${data.paymentPlan === 'full' ? 'Full Payment' : data.paymentPlan === 'half' ? 'Split Payment (50% upfront)' : data.paymentPlan}</p>` : ''}
           </div>
         </div>
       </div>

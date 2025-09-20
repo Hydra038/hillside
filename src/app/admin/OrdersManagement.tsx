@@ -128,14 +128,16 @@ export default function OrdersManagement() {
 
   const exportOrders = () => {
     const csvContent = [
-      ['Order ID', 'Customer', 'Email', 'Date', 'Total', 'Status'].join(','),
+      ['Order ID', 'Customer', 'Email', 'Date', 'Total', 'Status', 'Payment Method', 'Payment Plan'].join(','),
       ...filteredOrders.map(order => [
         order.id,
         order.user?.name || 'Unknown',
         order.user?.email || 'No email',
         new Date(order.createdAt).toLocaleDateString(),
         `£${Number(order.total).toFixed(2)}`,
-        order.status
+        order.status,
+        order.paymentMethod || 'Not specified',
+        order.paymentPlan === 'full' ? 'Full Payment' : order.paymentPlan === 'half' ? 'Split Payment (50% upfront)' : order.paymentPlan || 'Not specified'
       ].join(','))
     ].join('\n')
 

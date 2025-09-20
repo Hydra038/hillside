@@ -97,6 +97,7 @@ export default function CheckoutPage() {
 			total,
 			shippingAddress: formData.address,
 			paymentMethod: selectedPaymentMethod,
+			paymentPlan: formData.paymentPlan,
 		};
 		try {
 			// Call real API to create order (status will be 'pending')
@@ -106,7 +107,7 @@ export default function CheckoutPage() {
 				body: JSON.stringify(orderPayload),
 				credentials: "include"
 			});
-			
+
 			if (!res.ok) {
 				let errorMessage = "Failed to place order";
 				try {
@@ -124,7 +125,7 @@ export default function CheckoutPage() {
 			// Success - get response data
 			const data = await res.json();
 			console.log('Order created successfully:', data);
-			
+
 			// Simulate loading for a few seconds before thank you
 			setTimeout(() => {
 				setIsLoading(false);
@@ -281,9 +282,9 @@ export default function CheckoutPage() {
 								<div>{error}</div>
 							</div>
 						)}
-						<button 
-							type="submit" 
-							className="w-full bg-gradient-to-r from-amber-500 to-amber-700 text-white py-5 px-8 rounded-2xl font-bold text-xl shadow-xl hover:from-amber-600 hover:to-amber-800 transition-colors disabled:bg-amber-400 disabled:cursor-not-allowed mt-6" 
+						<button
+							type="submit"
+							className="w-full bg-gradient-to-r from-amber-500 to-amber-700 text-white py-5 px-8 rounded-2xl font-bold text-xl shadow-xl hover:from-amber-600 hover:to-amber-800 transition-colors disabled:bg-amber-400 disabled:cursor-not-allowed mt-6"
 							disabled={isLoading}
 						>
 							{isLoading ? "Processing Order..." : "Place Order"}

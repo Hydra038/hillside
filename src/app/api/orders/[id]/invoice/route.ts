@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { db } from '@/lib/db'
-import { orders, orderItems, products, users } from '@/lib/db/schema.mysql'
-import { eq } from 'drizzle-orm'
+import { prisma } from '@/lib/prisma'
 import jwt from 'jsonwebtoken'
 import { generateInvoiceHTML, InvoiceData } from '@/lib/invoice-generator'
 
@@ -45,31 +43,33 @@ export async function GET(
     }
 
     // Get order details with user and order items
-    const orderQuery = await db
-      .select({
-        id: orders.id,
-        userId: orders.userId,
-        total: orders.total,
-        status: orders.status,
-        shippingAddress: orders.shippingAddress,
-        paymentMethod: orders.paymentMethod,
-        createdAt: orders.createdAt,
-        userName: users.name,
-        userEmail: users.email,
-      })
-      .from(orders)
-      .leftJoin(users, eq(orders.userId, users.id))
-      .where(eq(orders.id, id))
-      .limit(1);
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true
+          }
+        },
+        orderItems: {
+          include: {
+            product: {
+              select: {
+                name: true
+              }
+            }
+          }
+        }
+      }
+    });
 
-    if (orderQuery.length === 0) {
+    if (!order) {
       return NextResponse.json(
         { error: 'Order not found' },
         { status: 404 }
       );
     }
-
-    const order = orderQuery[0];
 
     // Check if user owns this order (or is admin)
     if (decoded.role !== 'admin' && order.userId !== decoded.userId) {
@@ -80,23 +80,12 @@ export async function GET(
     }
 
     // Only allow invoice download for shipped or delivered orders
-    if (order.status !== 'shipped' && order.status !== 'delivered') {
+    if (order.status !== 'SHIPPED' && order.status !== 'DELIVERED') {
       return NextResponse.json(
         { error: 'Invoice not available - order not yet shipped' },
         { status: 400 }
       );
     }
-
-    // Get order items with product details
-    const orderItemsQuery = await db
-      .select({
-        quantity: orderItems.quantity,
-        priceAtTime: orderItems.priceAtTime,
-        productName: products.name,
-      })
-      .from(orderItems)
-      .leftJoin(products, eq(orderItems.productId, products.id))
-      .where(eq(orderItems.orderId, id));
 
     // Parse shipping address
     let shippingAddress;
@@ -121,16 +110,16 @@ export async function GET(
         month: 'long',
         year: 'numeric'
       }),
-      customerName: order.userName || 'Valued Customer',
-      customerEmail: order.userEmail || '',
+      customerName: order.user?.name || 'Valued Customer',
+      customerEmail: order.user?.email || '',
       shippingAddress: {
         street: shippingAddress.street || '',
         city: shippingAddress.city || '',
         postcode: shippingAddress.postcode || '',
         country: shippingAddress.country || 'UK'
       },
-      items: orderItemsQuery.map(item => ({
-        name: item.productName || 'Product',
+      items: order.orderItems.map(item => ({
+        name: item.product?.name || 'Product',
         quantity: item.quantity,
         unitPrice: Number(item.priceAtTime || 0).toFixed(2),
         total: (Number(item.priceAtTime || 0) * item.quantity).toFixed(2)
@@ -138,6 +127,7 @@ export async function GET(
       subtotal: Number(order.total).toFixed(2),
       total: Number(order.total).toFixed(2),
       paymentMethod: order.paymentMethod || undefined,
+      paymentPlan: order.paymentPlan || undefined,
       notes: 'Thank you for your business!'
     };
 

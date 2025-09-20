@@ -39,6 +39,8 @@ export async function GET() {
         status: true,
         createdAt: true,
         shippingAddress: true,
+        paymentMethod: true,
+        paymentPlan: true,
       },
       orderBy: {
         createdAt: 'desc'
@@ -181,8 +183,8 @@ export async function POST(request: Request) {
 
     // Return success response with order ID
     console.log('Orders POST: Order and items created successfully, returning success');
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       orderId,
       message: 'Order created successfully'
     })
