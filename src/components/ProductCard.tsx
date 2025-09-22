@@ -15,8 +15,11 @@ export default function ProductCard({ product }: ProductCardProps) {
   
   // Check if this is a special offer product
   const isSpecialOffer = product.category === 'Special Offers' || 
-                        product.name.toLowerCase().includes('special offer') ||
-                        product.name.toLowerCase().includes('offer');
+    product.name.toLowerCase().includes('special offer') ||
+    product.name.toLowerCase().includes('offer');
+
+  // Make the 5 Tonne offer even more prominent
+  const isFiveTonneOffer = product.name.toLowerCase().includes('5 tonne') || product.name.toLowerCase().includes('5 tonnes');
 
   // Provide default value for stockQuantity if undefined
   const stockQuantity = product.stockQuantity ?? 0;
@@ -35,16 +38,22 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   return (
     <div
-      className={`bg-white rounded-lg shadow-md overflow-hidden relative ${isSpecialOffer ? 'ring-2 ring-red-500 shadow-lg' : ''}`}
+      className={`bg-white rounded-lg shadow-md overflow-hidden relative ${isSpecialOffer ? 'ring-2 ring-red-500 shadow-lg' : ''} ${isFiveTonneOffer ? 'scale-[1.03] border-4 border-yellow-400 animate-bounce-slow' : ''}`}
       tabIndex={0}
       aria-label={`Product card for ${product.name}`}
     >
       {/* Special Offer Badge */}
       {isSpecialOffer && (
-        <div className="absolute top-2 right-2 z-10">
-          <span className="bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold animate-pulse">
-            🔥 SPECIAL OFFER!
+        <div className="absolute top-2 right-2 z-20 flex flex-col items-end">
+          <span className={`bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold animate-pulse shadow-lg ${isFiveTonneOffer ? 'text-lg px-4 py-2 bg-yellow-400 text-red-900 border-2 border-red-600 animate-bounce-slow' : ''}`}
+          >
+            {isFiveTonneOffer ? '🔥 5 TONNE MEGA DEAL!' : '🔥 SPECIAL OFFER!'}
           </span>
+          {isFiveTonneOffer && (
+            <span className="mt-2 bg-yellow-300 text-red-800 px-3 py-1 rounded-full text-xs font-extrabold border border-yellow-500 shadow animate-bounce-slow">
+              ONLY £200 - SAVE BIG!
+            </span>
+          )}
         </div>
       )}
       
@@ -52,26 +61,32 @@ export default function ProductCard({ product }: ProductCardProps) {
         <img
           src={product.imageUrl}
           alt={product.name || 'Product image'}
-          className="w-full h-48 object-cover"
+          className={`w-full h-48 object-cover ${isFiveTonneOffer ? 'ring-4 ring-yellow-400 scale-105' : ''}`}
           loading="lazy"
         />
       )}
       
       <div className="p-4">
         <h3 className={`text-xl font-semibold mb-2 ${
-          isSpecialOffer ? 'text-red-700' : 'text-gray-900'
+          isFiveTonneOffer ? 'text-yellow-600 drop-shadow font-extrabold uppercase tracking-wider' : isSpecialOffer ? 'text-red-700' : 'text-gray-900'
         }`}>{product.name}</h3>
         <p className="text-gray-600 mb-4 line-clamp-2">{product.description}</p>
         
         <div className="flex items-center justify-between mb-4">
           <span className={`text-lg font-bold ${
-            isSpecialOffer ? 'text-red-600 text-xl' : 'text-gray-900'
-          }`}>£{Number(product.price).toFixed(2)}</span>
-          {isSpecialOffer && (
+            isFiveTonneOffer ? 'text-yellow-700 text-2xl animate-bounce-slow' : isSpecialOffer ? 'text-red-600 text-xl' : 'text-gray-900'
+          }`}>
+            £{Number(product.price).toFixed(2)}
+          </span>
+          {isFiveTonneOffer ? (
+            <span className="text-yellow-700 text-base font-extrabold animate-bounce-slow">
+              ⭐️ BEST VALUE THIS SEASON ⭐️
+            </span>
+          ) : isSpecialOffer ? (
             <span className="text-green-600 text-sm font-semibold">
               MASSIVE SAVINGS!
             </span>
-          )}
+          ) : null}
           <button
             onClick={handleAddToCart}
             disabled={isAdding || product.stockQuantity === 0}
