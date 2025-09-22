@@ -12,28 +12,38 @@ interface ProductCardProps {
 export default function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCartStore()
   const [isAdding, setIsAdding] = useState(false)
-  
-  // Check if this is a special offer product
-  const isSpecialOffer = product.category === 'Special Offers' || 
-    product.name.toLowerCase().includes('special offer') ||
-    product.name.toLowerCase().includes('offer');
 
-  // Make the 5 Tonne offer even more prominent
+  // Check if this is a special offer product
   const isFiveTonneOffer = product.name.toLowerCase().includes('5 tonne') || product.name.toLowerCase().includes('5 tonnes');
+  const isSpecialOffer = (
+    product.category === 'Special Offers' ||
+    product.name.toLowerCase().includes('special offer') ||
+    (product.name.toLowerCase().includes('offer') && !isFiveTonneOffer)
+  );
 
   // Provide default value for stockQuantity if undefined
   const stockQuantity = product.stockQuantity ?? 0;
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     setIsAdding(true)
-    const price = typeof product.price === 'string' ? Number(product.price) : product.price
-    addItem({
-      id: product.id,
-      name: product.name,
-      price,
-      imageUrl: product.imageUrl || undefined
-    })
-    setTimeout(() => setIsAdding(false), 500)
+    try {
+      // Always fetch the latest product data from the API
+      const res = await fetch(`/api/products/${product.id}`);
+      if (!res.ok) throw new Error('Failed to fetch latest product data');
+      const latest = await res.json();
+      const price = typeof latest.price === 'string' ? Number(latest.price) : latest.price;
+      addItem({
+        id: latest.id,
+        name: latest.name,
+        price,
+        imageUrl: latest.imageUrl || undefined
+      });
+    } catch (err) {
+      alert('Could not add to cart. Please try again.');
+      console.error(err);
+    } finally {
+      setTimeout(() => setIsAdding(false), 500);
+    }
   }
 
   return (
@@ -43,20 +53,23 @@ export default function ProductCard({ product }: ProductCardProps) {
       aria-label={`Product card for ${product.name}`}
     >
       {/* Special Offer Badge */}
-      {isSpecialOffer && (
+      {isFiveTonneOffer ? (
         <div className="absolute top-2 right-2 z-20 flex flex-col items-end">
-          <span className={`bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold animate-pulse shadow-lg ${isFiveTonneOffer ? 'text-lg px-4 py-2 bg-yellow-400 text-red-900 border-2 border-red-600 animate-bounce-slow' : ''}`}
-          >
-            {isFiveTonneOffer ? '🔥 5 TONNE MEGA DEAL!' : '🔥 SPECIAL OFFER!'}
+          <span className="text-lg px-4 py-2 bg-yellow-400 text-red-900 border-2 border-red-600 rounded-full font-bold animate-bounce-slow shadow-lg">
+            🔥 5 TONNE MEGA DEAL!
           </span>
-          {isFiveTonneOffer && (
-            <span className="mt-2 bg-yellow-300 text-red-800 px-3 py-1 rounded-full text-xs font-extrabold border border-yellow-500 shadow animate-bounce-slow">
-              ONLY £200 - SAVE BIG!
-            </span>
-          )}
+          <span className="mt-2 bg-yellow-300 text-red-800 px-3 py-1 rounded-full text-xs font-extrabold border border-yellow-500 shadow animate-bounce-slow">
+            ONLY £{Number(product.price).toFixed(2)} - SAVE BIG!
+          </span>
         </div>
-      )}
-      
+      ) : isSpecialOffer ? (
+        <div className="absolute top-2 right-2 z-20 flex flex-col items-end">
+          <span className="bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold animate-pulse shadow-lg">
+            🔥 SPECIAL OFFER! ONLY £{Number(product.price).toFixed(2)}
+          </span>
+        </div>
+      ) : null}
+
       {product.imageUrl && (
         <img
           src={product.imageUrl}
@@ -65,17 +78,15 @@ export default function ProductCard({ product }: ProductCardProps) {
           loading="lazy"
         />
       )}
-      
+
       <div className="p-4">
-        <h3 className={`text-xl font-semibold mb-2 ${
-          isFiveTonneOffer ? 'text-yellow-600 drop-shadow font-extrabold uppercase tracking-wider' : isSpecialOffer ? 'text-red-700' : 'text-gray-900'
-        }`}>{product.name}</h3>
+        <h3 className={`text-xl font-semibold mb-2 ${isFiveTonneOffer ? 'text-yellow-600 drop-shadow font-extrabold uppercase tracking-wider' : isSpecialOffer ? 'text-red-700' : 'text-gray-900'
+          }`}>{product.name}</h3>
         <p className="text-gray-600 mb-4 line-clamp-2">{product.description}</p>
-        
+
         <div className="flex items-center justify-between mb-4">
-          <span className={`text-lg font-bold ${
-            isFiveTonneOffer ? 'text-yellow-700 text-2xl animate-bounce-slow' : isSpecialOffer ? 'text-red-600 text-xl' : 'text-gray-900'
-          }`}>
+          <span className={`text-lg font-bold ${isFiveTonneOffer ? 'text-yellow-700 text-2xl animate-bounce-slow' : isSpecialOffer ? 'text-red-600 text-xl' : 'text-gray-900'
+            }`}>
             £{Number(product.price).toFixed(2)}
           </span>
           {isFiveTonneOffer ? (
@@ -90,11 +101,10 @@ export default function ProductCard({ product }: ProductCardProps) {
           <button
             onClick={handleAddToCart}
             disabled={isAdding || product.stockQuantity === 0}
-            className={`flex items-center gap-2 px-4 py-2 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-amber-500 ${
-              isSpecialOffer
-                ? 'bg-red-600 text-white hover:bg-red-700'
-                : 'bg-amber-600 text-white hover:bg-amber-700'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-amber-500 ${isSpecialOffer
+              ? 'bg-red-600 text-white hover:bg-red-700'
+              : 'bg-amber-600 text-white hover:bg-amber-700'
+              }`}
             aria-label={`Add ${product.name} to cart`}
           >
             {/* Shopping cart or loading icon */}
@@ -125,12 +135,12 @@ export default function ProductCard({ product }: ProductCardProps) {
           View Details
         </Link>
 
-  {stockQuantity < 10 && stockQuantity > 0 && (
+        {stockQuantity < 10 && stockQuantity > 0 && (
           <p className="text-amber-600 text-sm mt-2">
             Only {product.stockQuantity} left in stock!
           </p>
         )}
-        
+
         {product.stockQuantity === 0 && (
           <p className="text-red-600 text-sm mt-2">
             Out of stock

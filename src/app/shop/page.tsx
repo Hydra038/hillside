@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 
 export default async function ShopPage() {
   let allProducts: any[] = [];
-  
+
   try {
     // Fetch products directly from database using Prisma
     const dbProducts = await prisma.product.findMany({
@@ -23,7 +23,7 @@ export default async function ShopPage() {
         createdAt: true
       }
     });
-    
+
     allProducts = dbProducts.map(product => ({
       id: product.id,
       name: product.name,
@@ -40,17 +40,21 @@ export default async function ShopPage() {
     allProducts = [];
   }
 
-  // Sort products to show special offers first
+  // Sort products: special offers first, then featured, then newest
   const sortedProducts = allProducts.sort((a: any, b: any) => {
-    const aIsSpecial = a.category === 'Special Offers' || 
-                      a.name.toLowerCase().includes('special offer') ||
-                      a.name.toLowerCase().includes('offer');
-    const bIsSpecial = b.category === 'Special Offers' || 
-                      b.name.toLowerCase().includes('special offer') ||
-                      b.name.toLowerCase().includes('offer');
+    const aIsSpecial = (a.category === 'Special Offers') ||
+      (a.name && a.name.toLowerCase().includes('special offer')) ||
+      (a.name && a.name.toLowerCase().includes('offer'));
+    const bIsSpecial = (b.category === 'Special Offers') ||
+      (b.name && b.name.toLowerCase().includes('special offer')) ||
+      (b.name && b.name.toLowerCase().includes('offer'));
     if (aIsSpecial && !bIsSpecial) return -1;
     if (!aIsSpecial && bIsSpecial) return 1;
-    return 0;
+    // If both are special or both are not, sort by isFeatured
+    if (a.isFeatured && !b.isFeatured) return -1;
+    if (!a.isFeatured && b.isFeatured) return 1;
+    // Otherwise, sort by newest
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
   return (
