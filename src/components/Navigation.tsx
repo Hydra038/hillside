@@ -1,198 +1,264 @@
-'use client';
+'use client'
 
-import { Fragment, useState } from 'react';
-import { Dialog, Popover, Transition } from '@headlessui/react';
-import {
-  Bars3Icon,
-  ShoppingCartIcon,
-  UserIcon,
-  XMarkIcon,
-} from '@heroicons/react/24/outline';
-import Link from 'next/link';
-
-const navigation = {
-  categories: [
-    {
-      name: 'Products',
-      featured: [
-        { name: 'Hardwood Logs', href: '/products/hardwood' },
-        { name: 'Softwood Logs', href: '/products/softwood' },
-        { name: 'Kindling', href: '/products/kindling' },
-        { name: 'Special Offers', href: '/products/special-offers' },
-      ],
-    },
-  ],
-  pages: [
-    { name: 'About', href: '/about' },
-    { name: 'Delivery', href: '/delivery' },
-    { name: 'Contact', href: '/contact' },
-  ],
-};
+import Link from 'next/link'
+import { useState } from 'react'
+import { usePathname } from 'next/navigation'
+import Logo from './Logo'
+import Cart from './Cart'
+import { useCartStore } from '@/lib/stores/cart-store'
+import { useAuth } from '@/lib/auth-provider'
 
 export default function Navigation() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [isCartOpen, setIsCartOpen] = useState(false)
+  const { items } = useCartStore()
+  const { user, signOut } = useAuth()
+  const pathname = usePathname()
+  
+  const cartItemCount = items.reduce((total, item) => total + item.quantity, 0)
+  
+  const isAdminPage = pathname?.startsWith('/admin')
+  const showRegularNavItems = !isAdminPage
+
+  const isActiveLink = (href: string) => {
+    if (href === '/' && pathname === '/') return true
+    if (href !== '/' && pathname?.startsWith(href)) return true
+    return false
+  }
+
+  const getSidebarLinkClasses = (href: string) => {
+    const baseClasses = "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200"
+    if (isActiveLink(href)) {
+      return `${baseClasses} bg-amber-600 text-white font-semibold shadow-lg`
+    }
+    return `${baseClasses} text-gray-700 hover:bg-amber-50 hover:text-amber-600`
+  }
+
+  const handleSignOut = async () => {
+    try {
+      await signOut()
+      setIsSidebarOpen(false)
+      window.location.href = '/'
+    } catch (error) {
+      console.error('Sign out error:', error)
+    }
+  }
 
   return (
-    <header className="bg-white">
-      <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
-          <div className="flex lg:flex-1">
-            <Link href="/" className="-m-1.5 p-1.5">
-              <span className="sr-only">Firewood E-commerce</span>
-              <span className="text-2xl font-bold text-green-700">FirewoodSite</span>
-            </Link>
-          </div>
-
-          {/* Mobile menu button */}
-          <div className="flex lg:hidden">
+    <>
+      {/* Top Bar */}
+      <nav className="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            {/* Menu Button */}
             <button
-              type="button"
-              className="-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-gray-700"
-              onClick={() => setMobileMenuOpen(true)}
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="p-2 rounded-lg text-gray-700 hover:text-amber-600 hover:bg-amber-50 transition-colors"
             >
-              <span className="sr-only">Open main menu</span>
-              <Bars3Icon className="h-6 w-6" aria-hidden="true" />
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
             </button>
-          </div>
 
-          {/* Desktop navigation */}
-          <Popover.Group className="hidden lg:flex lg:gap-x-12">
-            {/* Categories dropdown */}
-            <Popover className="relative">
-              {() => (
-                <>
-                  <Popover.Button className="flex items-center gap-x-1 text-sm font-semibold leading-6 text-gray-900">
-                    Products
-                  </Popover.Button>
+            {/* Logo */}
+            <Link href="/" className="flex items-center">
+              <Logo />
+            </Link>
 
-                  <Transition
-                    as={Fragment}
-                    enter="transition ease-out duration-200"
-                    enterFrom="opacity-0 translate-y-1"
-                    enterTo="opacity-100 translate-y-0"
-                    leave="transition ease-in duration-150"
-                    leaveFrom="opacity-100 translate-y-0"
-                    leaveTo="opacity-0 translate-y-1"
-                  >
-                    <Popover.Panel className="absolute -left-8 top-full z-10 mt-3 w-screen max-w-md overflow-hidden rounded-3xl bg-white shadow-lg ring-1 ring-gray-900/5">
-                      <div className="p-4">
-                        {navigation.categories[0].featured.map((item) => (
-                          <div
-                            key={item.name}
-                            className="group relative flex items-center gap-x-6 rounded-lg p-4 text-sm leading-6 hover:bg-gray-50"
-                          >
-                            <div className="flex-auto">
-                              <Link
-                                href={item.href}
-                                className="block font-semibold text-gray-900"
-                              >
-                                {item.name}
-                                <span className="absolute inset-0" />
-                              </Link>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </Popover.Panel>
-                  </Transition>
-                </>
-              )}
-            </Popover>
-
-            {/* Regular pages */}
-            {navigation.pages.map((page) => (
-              <Link
-                key={page.name}
-                href={page.href}
-                className="text-sm font-semibold leading-6 text-gray-900"
+            {/* Cart Button */}
+            {showRegularNavItems && (
+              <button 
+                onClick={() => setIsCartOpen(true)} 
+                className="relative p-2 rounded-lg text-gray-700 hover:text-amber-600 hover:bg-amber-50 transition-colors"
               >
-                {page.name}
-              </Link>
-            ))}
-          </Popover.Group>
-
-          {/* Desktop right section */}
-          <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:gap-x-6">
-            <Link 
-              href="/cart" 
-              className="flex items-center text-sm font-semibold leading-6 text-gray-900"
-            >
-              <ShoppingCartIcon className="h-6 w-6 mr-1" />
-              Cart
-            </Link>
-            <Link
-              href="/account"
-              className="flex items-center text-sm font-semibold leading-6 text-gray-900"
-            >
-              <UserIcon className="h-6 w-6 mr-1" />
-              Account
-            </Link>
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 1.5M7 13l1.5 1.5M13 13v6a2 2 0 01-2 2H9a2 2 0 01-2 2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01" />
+                </svg>
+                {cartItemCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-amber-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                    {cartItemCount}
+                  </span>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </nav>
 
-      {/* Mobile menu */}
-      <Dialog as="div" className="lg:hidden" open={mobileMenuOpen} onClose={setMobileMenuOpen}>
-        <div className="fixed inset-0 z-10" />
-        <Dialog.Panel className="fixed inset-y-0 right-0 z-10 w-full overflow-y-auto bg-white px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="-m-1.5 p-1.5">
-              <span className="sr-only">Firewood E-commerce</span>
-              <span className="text-2xl font-bold text-green-700">FirewoodSite</span>
+      {/* Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside className={`fixed top-0 left-0 h-full w-80 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${
+        isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}>
+        <div className="flex flex-col h-full">
+          {/* Sidebar Header */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <Link href="/" onClick={() => setIsSidebarOpen(false)} className="flex items-center">
+              <Logo />
             </Link>
             <button
-              type="button"
-              className="-m-2.5 rounded-md p-2.5 text-gray-700"
-              onClick={() => setMobileMenuOpen(false)}
+              onClick={() => setIsSidebarOpen(false)}
+              className="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100"
             >
-              <span className="sr-only">Close menu</span>
-              <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
-          <div className="mt-6 flow-root">
-            <div className="-my-6 divide-y divide-gray-500/10">
-              <div className="space-y-2 py-6">
-                {/* Mobile products menu */}
-                {navigation.categories[0].featured.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
-                  >
-                    {item.name}
-                  </Link>
-                ))}
-                {/* Mobile pages menu */}
-                {navigation.pages.map((page) => (
-                  <Link
-                    key={page.name}
-                    href={page.href}
-                    className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
-                  >
-                    {page.name}
-                  </Link>
-                ))}
+
+          {/* Sidebar Content */}
+          <div className="flex-1 overflow-y-auto p-4">
+            {/* User Section */}
+            {user && (
+              <div className="mb-6 p-4 bg-gradient-to-r from-amber-50 to-amber-100 rounded-lg border border-amber-200">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-12 h-12 rounded-full bg-amber-600 flex items-center justify-center text-white font-bold text-lg">
+                    {user.name?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-800">{user.name}</p>
+                    <p className="text-sm text-gray-600">{user.email}</p>
+                  </div>
+                </div>
               </div>
-              {/* Mobile user actions */}
-              <div className="py-6">
-                <Link
-                  href="/cart"
-                  className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
-                >
-                  Cart
-                </Link>
-                <Link
-                  href="/account"
-                  className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
-                >
-                  Account
-                </Link>
-              </div>
+            )}
+
+            {/* Navigation Links */}
+            <div className="space-y-2">
+              <Link
+                href="/"
+                onClick={() => setIsSidebarOpen(false)}
+                className={getSidebarLinkClasses('/')}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                <span>Home</span>
+              </Link>
+
+              {showRegularNavItems && (
+                <>
+                  <Link
+                    href="/shop"
+                    onClick={() => setIsSidebarOpen(false)}
+                    className={getSidebarLinkClasses('/shop')}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                    <span>Shop</span>
+                  </Link>
+
+                  <Link
+                    href="/about"
+                    onClick={() => setIsSidebarOpen(false)}
+                    className={getSidebarLinkClasses('/about')}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>About</span>
+                  </Link>
+
+                  <Link
+                    href="/delivery"
+                    onClick={() => setIsSidebarOpen(false)}
+                    className={getSidebarLinkClasses('/delivery')}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
+                    </svg>
+                    <span>Delivery</span>
+                  </Link>
+
+                  <Link
+                    href="/contact"
+                    onClick={() => setIsSidebarOpen(false)}
+                    className={getSidebarLinkClasses('/contact')}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <span>Contact</span>
+                  </Link>
+                </>
+              )}
+
+              {/* User Account Links */}
+              {user && (
+                <>
+                  <div className="my-4 border-t border-gray-200"></div>
+                  
+                  {!isAdminPage && (
+                    <Link
+                      href="/account"
+                      onClick={() => setIsSidebarOpen(false)}
+                      className={getSidebarLinkClasses('/account')}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      <span>My Account</span>
+                    </Link>
+                  )}
+
+                  {user.role === 'admin' && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setIsSidebarOpen(false)}
+                      className={getSidebarLinkClasses('/admin')}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span>Admin Panel</span>
+                    </Link>
+                  )}
+                </>
+              )}
             </div>
           </div>
-        </Dialog.Panel>
-      </Dialog>
-    </header>
-  );
+
+          {/* Sidebar Footer */}
+          <div className="p-4 border-t border-gray-200">
+            {user ? (
+              <button
+                onClick={handleSignOut}
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-amber-700 text-white px-4 py-3 rounded-lg shadow hover:from-amber-600 hover:to-amber-800 transition-all font-semibold"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
+                </svg>
+                Sign Out
+              </button>
+            ) : (
+              <Link
+                href="/signin"
+                onClick={() => setIsSidebarOpen(false)}
+                className="w-full flex items-center justify-center gap-2 bg-amber-600 text-white px-4 py-3 rounded-lg shadow hover:bg-amber-700 transition-colors font-semibold"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                </svg>
+                Sign In
+              </Link>
+            )}
+          </div>
+        </div>
+      </aside>
+
+      {/* Cart Component */}
+      {showRegularNavItems && <Cart isOpen={isCartOpen} setIsOpen={setIsCartOpen} />}
+
+      {/* Spacer for fixed top bar */}
+      <div className="h-16"></div>
+    </>
+  )
 }

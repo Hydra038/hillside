@@ -1,0 +1,64 @@
+MANUAL DOWNLOAD INSTRUCTIONS
+===========================
+
+The folder structure has been created:
+📁 public/images/products/
+
+Please download the following images manually by:
+1. Right-click on each URL below
+2. Select "Save link as..." or "Save target as..."
+3. Save to: firewood-ecommerce/public/images/products/
+4. Use the exact filename provided
+
+IMAGES TO DOWNLOAD:
+===================
+
+1. Premium Oak Logs
+   URL: https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop&auto=format
+   Save as: oak-logs.jpg
+
+2. Mixed Hardwood Bundle
+   URL: https://images.unsplash.com/photo-1551801841-ecad875a020?w=400&h=300&fit=crop&auto=format
+   Save as: mixed-hardwood.jpg
+
+3. Birch Logs - Small
+   URL: https://images.unsplash.com/photo-1445024441609-ba2eb8650f95?w=400&h=300&fit=crop&auto=format
+   Save as: birch-logs.jpg
+
+4. Ash Logs - Large
+   URL: https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?w=400&h=300&fit=crop&auto=format
+   Save as: ash-logs.jpg
+
+5. Kindling Bundle
+   URL: https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=400&h=300&fit=crop&auto=format
+   Save as: kindling-bundle.jpg
+
+6. Beech Logs - Premium
+   URL: https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=300&fit=crop&auto=format
+   Save as: beech-logs.jpg
+
+7. 5 Tonnes Mixed Hardwood - Special Offer
+   URL: https://images.unsplash.com/photo-1550985543-52d8ee9d0c2c?w=400&h=300&fit=crop&auto=format
+   Save as: special-offer-5-tonnes.jpg
+
+FINAL FOLDER STRUCTURE:
+======================
+firewood-ecommerce/
+  public/
+    images/
+      products/
+        ✓ oak-logs.jpg
+        ✓ mixed-hardwood.jpg
+        ✓ birch-logs.jpg
+        ✓ ash-logs.jpg
+        ✓ kindling-bundle.jpg
+        ✓ beech-logs.jpg
+        ✓ special-offer-5-tonnes.jpg
+
+NEXT STEPS:
+===========
+After downloading all images, run:
+1. node scripts/update-local-images.js
+2. Restart your development server
+
+This will update your database to use the local images instead of external URLs.

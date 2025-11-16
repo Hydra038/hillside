@@ -1,0 +1,27 @@
+<!-- Alternative local background approach -->
+<!-- You can replace the Unsplash URL with this local image approach -->
+
+BACKGROUND IMAGE SETUP
+======================
+
+Current Implementation:
+- Using Unsplash image URL for immediate results
+- Beautiful oak wood background with proper overlay
+
+To Use Local Background Image:
+1. Download a high-quality firewood background image (1920x1080 or larger)
+2. Save it as: public/images/hero-background.jpg
+3. Replace the style backgroundImage URL in HomeContent.tsx with:
+   backgroundImage: `url('/images/hero-background.jpg')`
+
+Recommended Background Images:
+- Stacked firewood with natural lighting
+- Wood pile with rustic barn or outdoor setting  
+- Close-up of seasoned logs with visible grain
+- Fireplace with burning logs (warm, inviting feel)
+
+Image Requirements:
+- Format: JPG or WebP for best performance
+- Size: 1920x1080 or larger for crisp display
+- File size: Keep under 500KB for fast loading
+- Style: Natural lighting, warm tones, high contrast for text readability
