@@ -7,10 +7,24 @@ import { useCartStore } from '@/lib/stores/cart-store'
 
 interface PaymentMethod {
   id: number
+  type?: string
   name: string
+  display_name?: string
+  displayName?: string
   description?: string
   enabled: boolean
   sortOrder?: number
+  config?: {
+    accountName?: string
+    accountNumber?: string
+    sortCode?: string
+    bankName?: string
+    email?: string
+    phoneNumber?: string
+    paybillNumber?: string
+    tillNumber?: string
+    instructions?: string
+  }
 }
 
 export default function CheckoutPage() {
@@ -300,7 +314,7 @@ export default function CheckoutPage() {
             </div>
 
             <div>
-              <label htmlFor="paymentMethod" className="block text-xs sm:text-sm font-medium text-gray-700">
+              <label htmlFor="paymentMethod" className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                 Payment Method
               </label>
               <select
@@ -318,11 +332,90 @@ export default function CheckoutPage() {
                   </option>
                 ))}
               </select>
-              {selectedPaymentMethod && paymentMethods.find((m: any) => (m.type || m.id) === selectedPaymentMethod) && (
-                <p className="mt-2 text-xs sm:text-sm text-gray-600">
-                  {paymentMethods.find((m: any) => (m.type || m.id) === selectedPaymentMethod)?.description}
-                </p>
-              )}
+              
+              {/* Payment Details Box */}
+              {selectedPaymentMethod && (() => {
+                const method = paymentMethods.find((m: any) => (m.type || m.id) === selectedPaymentMethod);
+                if (!method) return null;
+                
+                return (
+                  <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <h3 className="font-semibold text-sm text-amber-900 mb-2">
+                      Payment Instructions
+                    </h3>
+                    
+                    {method.description && (
+                      <p className="text-xs sm:text-sm text-gray-700 mb-3">
+                        {method.description}
+                      </p>
+                    )}
+                    
+                    {/* Show config details */}
+                    {method.config && (
+                      <div className="space-y-2 text-sm">
+                        {method.config.accountName && (
+                          <div className="flex flex-col">
+                            <span className="text-xs text-gray-600">Account Name:</span>
+                            <span className="font-medium text-gray-900">{method.config.accountName}</span>
+                          </div>
+                        )}
+                        
+                        {method.config.accountNumber && (
+                          <div className="flex flex-col">
+                            <span className="text-xs text-gray-600">Account Number:</span>
+                            <span className="font-mono font-medium text-gray-900">{method.config.accountNumber}</span>
+                          </div>
+                        )}
+                        
+                        {method.config.sortCode && (
+                          <div className="flex flex-col">
+                            <span className="text-xs text-gray-600">Sort Code:</span>
+                            <span className="font-mono font-medium text-gray-900">{method.config.sortCode}</span>
+                          </div>
+                        )}
+                        
+                        {method.config.bankName && (
+                          <div className="flex flex-col">
+                            <span className="text-xs text-gray-600">Bank Name:</span>
+                            <span className="font-medium text-gray-900">{method.config.bankName}</span>
+                          </div>
+                        )}
+                        
+                        {method.config.phoneNumber && (
+                          <div className="flex flex-col">
+                            <span className="text-xs text-gray-600">Phone Number:</span>
+                            <span className="font-mono font-medium text-gray-900">{method.config.phoneNumber}</span>
+                          </div>
+                        )}
+                        
+                        {method.config.paybillNumber && (
+                          <div className="flex flex-col">
+                            <span className="text-xs text-gray-600">Paybill Number:</span>
+                            <span className="font-mono font-medium text-gray-900">{method.config.paybillNumber}</span>
+                          </div>
+                        )}
+                        
+                        {method.config.tillNumber && (
+                          <div className="flex flex-col">
+                            <span className="text-xs text-gray-600">Till Number:</span>
+                            <span className="font-mono font-medium text-gray-900">{method.config.tillNumber}</span>
+                          </div>
+                        )}
+                        
+                        {method.config.instructions && (
+                          <div className="mt-3 p-2 bg-white rounded border border-amber-300">
+                            <p className="text-xs text-gray-700 whitespace-pre-line">{method.config.instructions}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    <div className="mt-3 p-2 bg-amber-100 rounded text-xs text-amber-800">
+                      <strong>Note:</strong> Please complete the payment and keep your reference number. Your order will be processed once payment is confirmed.
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             <button
