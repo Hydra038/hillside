@@ -23,38 +23,20 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: "Hillside Logs Fuel - Premium Quality Firewood",
   description: "Premium quality firewood delivered to your door. Sustainable, seasoned firewood for your home and outdoor needs from Hillside Logs Fuel.",
-  manifest: "/manifest.json",
+  metadataBase: new URL('https://hillside.vercel.app'),
   icons: {
     icon: [
-      {
-        url: "/favicon.svg",
-        type: "image/svg+xml",
-        sizes: "any",
-      },
-      {
-        url: "/icon-32.svg",
-        type: "image/svg+xml",
-        sizes: "32x32",
-      },
-      {
-        url: "/favicon.ico",
-        sizes: "16x16 32x32",
-        type: "image/x-icon",
-      },
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: 'any' }
     ],
     apple: [
-      {
-        url: "/apple-touch-icon.svg",
-        type: "image/svg+xml",
-        sizes: "180x180",
-      },
+      { url: '/apple-touch-icon.svg', type: 'image/svg+xml' }
     ],
-    shortcut: "/favicon.svg",
   },
   openGraph: {
     title: "Hillside Logs Fuel",
     description: "Premium quality firewood delivered to your door",
-    url: "https://hillsidelogsfuel.com",
+    url: "https://hillside.vercel.app",
     siteName: "Hillside Logs Fuel",
     images: [
       {
@@ -76,11 +58,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} ${poppins.variable}`}>
-      <head>
-        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.svg" />
-      </head>
       <body className="antialiased min-h-screen flex flex-col font-sans bg-background text-foreground">
         <ClientLayout>{children}</ClientLayout>
       </body>
