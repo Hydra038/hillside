@@ -7,24 +7,25 @@ import AnalyticsDashboard from './AnalyticsDashboard'
 import PaymentSettingsManagement from './PaymentSettingsManagement'
 import AdminGuard from '@/components/AdminGuard'
 
+// Force dynamic rendering to avoid build-time database connection
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function AdminDashboardPage() {
-  // Use raw SQL to fetch products with only existing columns
-  const { neon } = await import('@neondatabase/serverless');
-  const sql = neon(process.env.DATABASE_URL!);
-  const dbProducts = await sql`
-    SELECT id, name, description, price, image_url, category, stock_quantity, is_featured, created_at
-    FROM products
-  `;
-  const allProducts = dbProducts.map(product => ({
+  // Fetch products using Drizzle ORM
+  const allProducts = await db.select().from(products)
+  
+  // Map to the expected format
+  const mappedProducts = allProducts.map(product => ({
     id: product.id,
     name: product.name,
     description: product.description,
     price: product.price?.toString?.() ?? '',
-    imageUrl: product.image_url || undefined,
+    imageUrl: product.imageUrl || undefined,
     category: product.category,
-    stockQuantity: product.stock_quantity,
-    isFeatured: product.is_featured,
-    createdAt: product.created_at
+    stockQuantity: product.stockQuantity,
+    isFeatured: product.isFeatured,
+    createdAt: product.createdAt
   }));
 
   return (
@@ -88,7 +89,7 @@ export default async function AdminDashboardPage() {
             
             <section className="bg-white/80 backdrop-blur-lg p-4 sm:p-6 lg:p-8 rounded-2xl shadow-lg">
               <h2 className="text-lg sm:text-xl font-bold mb-4 text-amber-700">Current Products</h2>
-              <ProductList products={allProducts} />
+              <ProductList products={mappedProducts} />
             </section>
           </main>
         </div>
