@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { db } from '@/lib/db'
-import { orders } from '@/lib/db/schema'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 import jwt from 'jsonwebtoken'
 
 export async function GET() {
@@ -9,11 +8,25 @@ export async function GET() {
     console.log('Orders TEST: Starting test')
     
     // Check database connection
-    const testOrders = await db.select().from(orders).limit(1)
-    console.log('Orders TEST: Database connection OK, orders count:', testOrders.length)
+    const { data: testOrders, error: dbError } = await supabaseAdmin
+      .from('orders')
+      .select('*')
+      .limit(1)
+    
+    console.log('Orders TEST: Database connection OK, orders count:', testOrders?.length || 0)
+    
+    if (dbError) {
+      console.error('Orders TEST: Database error:', dbError)
+      return NextResponse.json({ 
+        success: false, 
+        dbConnection: false,
+        error: dbError.message
+      })
+    }
     
     // Check authentication
-    const cookieStore = await cookies(); const token = cookieStore.get('token')?.value
+    const cookieStore = await cookies()
+    const token = cookieStore.get('auth-token')?.value
     console.log('Orders TEST: Token present:', !!token)
     
     if (token && process.env.JWT_SECRET) {
@@ -26,7 +39,7 @@ export async function GET() {
           dbConnection: true, 
           authValid: true,
           userId: decoded.userId,
-          ordersCount: testOrders.length
+          ordersCount: testOrders?.length || 0
         })
       } catch (jwtError) {
         console.log('Orders TEST: JWT error:', jwtError)

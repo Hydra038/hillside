@@ -60,16 +60,23 @@ export default function SignInPage() {
     try {
       const userResult = await signIn(formData.email, formData.password)
       
+      // If signIn returns null, an error occurred and is already set in authError
+      if (!userResult) {
+        setIsLoading(false)
+        return
+      }
+      
       // Role-based redirect: admins go to admin dashboard, users go to their intended page
-      if (userResult?.role === 'admin') {
-        router.push('/admin')
+      if (userResult.role?.toLowerCase() === 'admin') {
+        // Use window.location for hard redirect to ensure cookie is sent
+        window.location.href = '/admin'
       } else {
+        // For regular users, use router.push
         router.push(redirect)
       }
     } catch (err) {
       console.error('Sign in error:', err)
       setError(err instanceof Error ? err.message : 'Invalid email or password')
-    } finally {
       setIsLoading(false)
     }
   }

@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import jwt from 'jsonwebtoken'
-import { db } from '@/lib/db'
-import { users } from '@/lib/db/schema'
-import { eq } from 'drizzle-orm'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 
 const JWT_SECRET = process.env.JWT_SECRET as string
 
@@ -11,7 +9,7 @@ export async function PUT(request: Request) {
   try {
     // Get token from cookies
     const cookieStore = await cookies()
-    const token = cookieStore.get('token')?.value
+    const token = cookieStore.get('auth-token')?.value
 
     if (!token) {
       return NextResponse.json(
@@ -39,12 +37,13 @@ export async function PUT(request: Request) {
 
     // Check if email is already taken by another user
     if (email !== decoded.email) {
-      const existingUser = await db
-        .select()
-        .from(users)
-        .where(eq(users.email, email))
+      const { data: existingUser } = await supabaseAdmin
+        .from('users')
+        .select('id')
+        .eq('email', email)
+        .single()
 
-      if (existingUser.length > 0 && existingUser[0].id !== decoded.userId) {
+      if (existingUser && existingUser.id !== decoded.userId) {
         return NextResponse.json(
           { error: 'Email is already taken' },
           { status: 400 }
@@ -53,17 +52,18 @@ export async function PUT(request: Request) {
     }
 
     // Update user in database
-    const updatedUser = await db
-      .update(users)
-      .set({
+    const { data: updatedUser, error } = await supabaseAdmin
+      .from('users')
+      .update({
         name,
         email,
-        updatedAt: new Date()
+        updated_at: new Date().toISOString()
       })
-      .where(eq(users.id, decoded.userId))
-      .returning()
+      .eq('id', decoded.userId)
+      .select()
+      .single()
 
-    if (updatedUser.length === 0) {
+    if (error || !updatedUser) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
@@ -85,7 +85,7 @@ export async function PUT(request: Request) {
     }
 
     // Remove password from response
-    const { password: _, ...userWithoutPassword } = updatedUser[0]
+    const { password: _, ...userWithoutPassword } = updatedUser
 
     // Create response
     const response = NextResponse.json({
@@ -96,7 +96,7 @@ export async function PUT(request: Request) {
     // Update cookie if email changed
     if (email !== decoded.email) {
       response.cookies.set({
-        name: 'token',
+        name: 'auth-token',
         value: newToken,
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',

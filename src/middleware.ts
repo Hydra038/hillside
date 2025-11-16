@@ -69,11 +69,15 @@ export function middleware(request: NextRequest) {
   let userRole = null
   if (token) {
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as jwt.JwtPayload
+      if (!process.env.JWT_SECRET) {
+        console.error('JWT_SECRET not available in middleware!')
+        throw new Error('JWT_SECRET not configured')
+      }
+      const decoded = jwt.verify(token, process.env.JWT_SECRET) as jwt.JwtPayload
       userRole = decoded.role
       console.log('User role:', userRole)
     } catch (error) {
-      console.log('Invalid token')
+      console.log('Invalid token error:', error instanceof Error ? error.message : error)
     }
   }
 
@@ -98,21 +102,21 @@ export function middleware(request: NextRequest) {
   // Token exists, handle authenticated users
   console.log('Token found, user role:', userRole)
 
-  // Redirect admin users away from customer-only pages
-  if (userRole === 'admin' && isCustomerOnlyPath) {
+  // Redirect admin users away from customer-only pages (case-insensitive)
+  if (userRole?.toLowerCase() === 'admin' && isCustomerOnlyPath) {
     console.log('Admin user accessing customer page, redirecting to admin dashboard')
     return NextResponse.redirect(new URL('/admin', request.url))
   }
 
-  // Redirect admin users from home page to admin dashboard
-  if (userRole === 'admin' && request.nextUrl.pathname === '/') {
+  // Redirect admin users from home page to admin dashboard (case-insensitive)
+  if (userRole?.toLowerCase() === 'admin' && request.nextUrl.pathname === '/') {
     console.log('Admin user accessing home page, redirecting to admin dashboard')
     return NextResponse.redirect(new URL('/admin', request.url))
   }
 
   // Handle authenticated users accessing signin pages
   if (isPublicPath || isAdminSignin) {
-    if (userRole === 'admin') {
+    if (userRole?.toLowerCase() === 'admin') {
       console.log('Authenticated admin accessing signin page, redirecting to admin dashboard')
       return NextResponse.redirect(new URL('/admin', request.url))
     } else if (!isAdminSignin) {
@@ -121,8 +125,8 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // Prevent non-admin users from accessing admin signin
-  if (isAdminSignin && userRole && userRole !== 'admin') {
+  // Prevent non-admin users from accessing admin signin (case-insensitive)
+  if (isAdminSignin && userRole && userRole.toLowerCase() !== 'admin') {
     console.log('Non-admin user accessing admin signin, redirecting to regular signin')
     return NextResponse.redirect(new URL('/signin', request.url))
   }

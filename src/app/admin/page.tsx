@@ -1,5 +1,4 @@
-import { db } from '@/lib/db'
-import { products } from '@/lib/db/schema'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 import ProductList from './ProductList'
 import AddProductForm from './AddProductForm'
 import OrdersManagement from './OrdersManagement'
@@ -12,11 +11,14 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 export default async function AdminDashboardPage() {
-  // Fetch products using Drizzle ORM
-  const allProducts = await db.select().from(products)
+  // Fetch products using Supabase client
+  const { data: allProducts } = await supabaseAdmin
+    .from('products')
+    .select('*')
+    .order('created_at', { ascending: false })
   
   // Map to the expected format
-  const mappedProducts = allProducts.map(product => ({
+  const mappedProducts = (allProducts || []).map(product => ({
     id: product.id,
     name: product.name,
     description: product.description,
@@ -25,7 +27,7 @@ export default async function AdminDashboardPage() {
     category: product.category,
     stockQuantity: product.stock_quantity,
     isFeatured: product.is_featured,
-    createdAt: product.createdAt
+    createdAt: product.created_at
   }));
 
   return (

@@ -13,7 +13,7 @@ async function verifyAdmin(request: NextRequest) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any
-    return decoded.role === 'admin'
+    return decoded.role?.toLowerCase() === 'admin'
   } catch (error) {
     return false
   }

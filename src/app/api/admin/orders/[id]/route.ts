@@ -33,7 +33,7 @@ export async function PATCH(
       role: string;
     }
 
-    if (decoded.role !== 'admin') {
+    if (decoded.role?.toLowerCase() !== 'admin') {
       return NextResponse.json(
         { error: 'Admin access required' },
         { status: 403 }
@@ -109,7 +109,7 @@ export async function GET(
       role: string;
     }
 
-    if (decoded.role !== 'admin') {
+    if (decoded.role?.toLowerCase() !== 'admin') {
       return NextResponse.json(
         { error: 'Admin access required' },
         { status: 403 }

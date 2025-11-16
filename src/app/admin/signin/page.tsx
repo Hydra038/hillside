@@ -63,16 +63,23 @@ export default function AdminSignInPage() {
     try {
       const userResult = await signIn(formData.email, formData.password)
       
-      // Check if user is admin
-      if (userResult?.role === 'admin') {
-        router.push('/admin')
+      // If signIn returns null, an error occurred and is already set in authError
+      if (!userResult) {
+        setIsLoading(false)
+        return
+      }
+      
+      // Check if user is admin (case-insensitive)
+      if (userResult.role?.toLowerCase() === 'admin') {
+        // Use window.location for a hard redirect to ensure cookie is sent
+        window.location.href = '/admin'
       } else {
         setError('Access denied. Admin credentials required.')
+        setIsLoading(false)
       }
     } catch (err) {
       console.error('Admin sign in error:', err)
       setError(err instanceof Error ? err.message : 'Invalid admin credentials')
-    } finally {
       setIsLoading(false)
     }
   }

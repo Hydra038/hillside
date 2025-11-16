@@ -27,7 +27,7 @@ export async function GET() {
       role: string;
     }
 
-    if (decoded.role !== 'admin') {
+    if (decoded.role?.toLowerCase() !== 'admin') {
       return NextResponse.json(
         { error: 'Admin access required' },
         { status: 403 }

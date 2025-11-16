@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
-import { products } from '@/lib/db/schema'
-import { eq } from 'drizzle-orm'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export async function GET(
   request: Request,
@@ -9,16 +7,20 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const product = await db.select().from(products).where(eq(products.id, parseInt(id)))
+    const { data: product, error } = await supabaseAdmin
+      .from('products')
+      .select('*')
+      .eq('id', parseInt(id))
+      .single()
     
-    if (product.length === 0) {
+    if (error || !product) {
       return NextResponse.json(
         { error: 'Product not found' },
         { status: 404 }
       )
     }
 
-    return NextResponse.json(product[0])
+    return NextResponse.json(product)
   } catch (error) {
     console.error('Error fetching product:', error)
     return NextResponse.json(
@@ -35,20 +37,22 @@ export async function PUT(
   try {
     const { id } = await params
     const updates = await request.json()
-    const updatedProduct = await db
-      .update(products)
-      .set(updates)
-      .where(eq(products.id, parseInt(id)))
-      .returning()
+    
+    const { data: updatedProduct, error } = await supabaseAdmin
+      .from('products')
+      .update(updates)
+      .eq('id', parseInt(id))
+      .select()
+      .single()
 
-    if (updatedProduct.length === 0) {
+    if (error || !updatedProduct) {
       return NextResponse.json(
         { error: 'Product not found' },
         { status: 404 }
       )
     }
 
-    return NextResponse.json(updatedProduct[0])
+    return NextResponse.json(updatedProduct)
   } catch (error) {
     console.error('Error updating product:', error)
     return NextResponse.json(
@@ -64,19 +68,22 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    const deletedProduct = await db
-      .delete(products)
-      .where(eq(products.id, parseInt(id)))
-      .returning()
+    
+    const { data: deletedProduct, error } = await supabaseAdmin
+      .from('products')
+      .delete()
+      .eq('id', parseInt(id))
+      .select()
+      .single()
 
-    if (deletedProduct.length === 0) {
+    if (error || !deletedProduct) {
       return NextResponse.json(
         { error: 'Product not found' },
         { status: 404 }
       )
     }
 
-    return NextResponse.json(deletedProduct[0])
+    return NextResponse.json(deletedProduct)
   } catch (error) {
     console.error('Error deleting product:', error)
     return NextResponse.json(

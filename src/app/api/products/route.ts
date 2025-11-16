@@ -1,10 +1,15 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
-import { products } from '@/lib/db/schema'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export async function GET() {
   try {
-    const allProducts = await db.select().from(products)
+    const { data: allProducts, error } = await supabaseAdmin
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false })
+    
+    if (error) throw error
+    
     return NextResponse.json(allProducts)
   } catch (error) {
     console.error('Error fetching products:', error)
@@ -19,6 +24,7 @@ export async function POST(request: Request) {
   try {
     let product = await request.json();
     console.log('Received product payload:', product);
+    
     // Map frontend field names to DB schema
     if (product.imageUrl) {
       product.image_url = product.imageUrl;
@@ -28,13 +34,21 @@ export async function POST(request: Request) {
       product.stock_quantity = product.stockQuantity;
       delete product.stockQuantity;
     }
-  // features is already an array, do not stringify
+    // features is already an array, do not stringify
     if (product.dimensions && typeof product.dimensions !== 'string') {
       product.dimensions = JSON.stringify(product.dimensions);
     }
-    // Insert product
-    const newProduct = await db.insert(products).values(product).returning();
-    return NextResponse.json(newProduct[0]);
+    
+    // Insert product using Supabase
+    const { data: newProduct, error } = await supabaseAdmin
+      .from('products')
+      .insert(product)
+      .select()
+      .single()
+    
+    if (error) throw error
+    
+    return NextResponse.json(newProduct);
   } catch (error) {
     console.error('Error creating product:', error);
     if (error instanceof Error && error.stack) {

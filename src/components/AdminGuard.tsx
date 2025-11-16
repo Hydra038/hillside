@@ -9,7 +9,7 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
   const router = useRouter()
 
   useEffect(() => {
-    if (!loading && (!user || user.role !== 'admin')) {
+    if (!loading && (!user || user.role?.toLowerCase() !== 'admin')) {
       router.push('/')
     }
   }, [user, loading, router])
@@ -22,7 +22,7 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
     )
   }
 
-  if (!user || user.role !== 'admin') {
+  if (!user || user.role?.toLowerCase() !== 'admin') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

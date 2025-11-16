@@ -209,7 +209,7 @@ export default function Navigation() {
                     </Link>
                   )}
 
-                  {user.role === 'admin' && (
+                  {user.role?.toLowerCase() === 'admin' && (
                     <Link
                       href="/admin"
                       onClick={() => setIsSidebarOpen(false)}

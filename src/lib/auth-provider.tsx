@@ -81,19 +81,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('Response headers:', Object.fromEntries(res.headers.entries()));
 
       if (!res.ok) {
-        console.log('Response not OK, status:', res.status);
         const contentType = res.headers.get('content-type');
-        console.log('Content type:', contentType);
         
         if (contentType && contentType.includes('application/json')) {
           const data = await res.json();
-          console.log('Error response data:', data);
-          throw new Error(data.error || 'Failed to sign in');
+          const errorMessage = data.error || 'Failed to sign in';
+          setError(errorMessage);
+          return null;
         } else {
           // Get the response text to see what's actually being returned
           const text = await res.text();
-          console.log('Non-JSON response text:', text);
-          throw new Error(`Server error: ${res.status} - ${text.substring(0, 100)}`);
+          const errorMessage = `Server error: ${res.status}`;
+          setError(errorMessage);
+          return null;
         }
       }
 
@@ -107,7 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Sign in error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to sign in';
       setError(errorMessage);
-      throw error;
+      return null;
     }
   }
 

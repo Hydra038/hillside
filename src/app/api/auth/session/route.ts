@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import jwt from 'jsonwebtoken'
-import { db } from '@/lib/db'
-import { users } from '@/lib/db/schema'
-import { eq } from 'drizzle-orm'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 
 const JWT_SECRET = process.env.JWT_SECRET
 if (!JWT_SECRET) {
@@ -12,7 +10,8 @@ if (!JWT_SECRET) {
 
 export async function GET() {
   try {
-    const cookieStore = await cookies(); const token = cookieStore.get('token')?.value
+    const cookieStore = await cookies()
+    const token = cookieStore.get('auth-token')?.value
 
     if (!token) {
       return NextResponse.json({ user: null })
@@ -26,19 +25,13 @@ export async function GET() {
     }
 
     // Get user data
-    const userResults = await db
-      .select({
-        id: users.id,
-        name: users.name,
-        email: users.email,
-        role: users.role
-      })
-      .from(users)
-      .where(eq(users.id, decoded.userId))
+    const { data: user, error } = await supabaseAdmin
+      .from('users')
+      .select('id, name, email, role')
+      .eq('id', decoded.userId)
+      .single()
 
-    const user = userResults[0]
-
-    if (!user) {
+    if (error || !user) {
       return NextResponse.json({ user: null })
     }
 

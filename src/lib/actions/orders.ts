@@ -1,11 +1,16 @@
-import { db } from '@/lib/db'
-import { orders } from '@/lib/db/schema'
-import { eq } from 'drizzle-orm'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export async function getOrders(userId: string) {
   try {
-    const userOrders = await db.select().from(orders).where(eq(orders.userId, userId))
-    return userOrders
+    const { data: userOrders, error } = await supabaseAdmin
+      .from('orders')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+    
+    if (error) throw error
+    
+    return userOrders || []
   } catch (error) {
     console.error('Error fetching orders:', error)
     return []
