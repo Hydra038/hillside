@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { neon } from '@neondatabase/serverless'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 import bcrypt from 'bcryptjs'
 
 export async function POST(request: Request) {
@@ -8,43 +8,21 @@ export async function POST(request: Request) {
     const { name, email, password } = await request.json()
     console.log('Signup data received:', { name, email, password: '***' })
 
-    if (!process.env.DATABASE_URL) {
-      throw new Error('DATABASE_URL is not defined')
-    }
-
-    const sql = neon(process.env.DATABASE_URL)
-
-    // Test database connection first
-    console.log('Testing database connection...')
-    try {
-      const testQuery = await sql`SELECT 1 as test`
-      console.log('Database connection test successful:', testQuery)
-    } catch (dbError) {
-      console.error('Database connection test failed:', dbError)
-      throw dbError
-    }
-
-    // Check what tables exist
-    console.log('Checking available tables...')
-    try {
-      const tables = await sql`
-        SELECT table_name 
-        FROM information_schema.tables 
-        WHERE table_schema = 'public'
-      `
-      console.log('Available tables:', tables)
-    } catch (tableError) {
-      console.error('Failed to check tables:', tableError)
-    }
-
-    // Check if user exists using raw SQL
+    // Check if user exists using Supabase client
     console.log('Checking if user exists...')
-    const existingUser = await sql`
-      SELECT id FROM users WHERE email = ${email}
-    `
-    console.log('Existing user check result:', existingUser)
+    const { data: existingUser, error: checkError } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .single()
     
-    if (existingUser.length > 0) {
+    if (checkError && checkError.code !== 'PGRST116') {
+      // PGRST116 = no rows returned (user doesn't exist, which is what we want)
+      console.error('Error checking user:', checkError)
+      throw checkError
+    }
+    
+    if (existingUser) {
       return NextResponse.json(
         { error: 'User already exists' },
         { status: 400 }
@@ -55,21 +33,27 @@ export async function POST(request: Request) {
     console.log('Hashing password...')
     const hashedPassword = await bcrypt.hash(password, 10)
 
-    // Create user using raw SQL
+    // Create user using Supabase client
     console.log('Creating new user...')
-    const newUser = await sql`
-      INSERT INTO users (name, email, password, role)
-      VALUES (${name}, ${email}, ${hashedPassword}, 'user')
-      RETURNING id, name, email
-    `
+    const { data: newUser, error: insertError } = await supabaseAdmin
+      .from('users')
+      .insert({
+        name,
+        email,
+        password: hashedPassword
+        // Don't specify role - let database use default
+      })
+      .select('id, name, email')
+      .single()
 
-    console.log('User created successfully:', newUser[0])
+    if (insertError) {
+      console.error('Error creating user:', insertError)
+      throw insertError
+    }
+
+    console.log('User created successfully:', newUser)
     return NextResponse.json({ 
-      user: { 
-        id: newUser[0].id, 
-        name: newUser[0].name, 
-        email: newUser[0].email 
-      } 
+      user: newUser
     })
   } catch (error) {
     console.error('Error in signup:', error)

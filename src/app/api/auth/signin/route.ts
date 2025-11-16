@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { neon } from '@neondatabase/serverless'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
@@ -21,12 +21,6 @@ export async function POST(request: Request) {
     }
     console.log('JWT_SECRET present:', true);
     
-    if (!process.env.DATABASE_URL) {
-      throw new Error('DATABASE_URL is not defined')
-    }
-
-    const sql = neon(process.env.DATABASE_URL)
-    
     // Validate request body
     if (!request.body) {
       console.error('Request body is missing');
@@ -46,22 +40,21 @@ export async function POST(request: Request) {
       );
     }
 
-    // Find user using raw SQL
-    const existingUser = await sql`
-      SELECT id, name, email, password, role, created_at
-      FROM users 
-      WHERE email = ${email}
-    `;
-    console.log('User found:', !!existingUser.length)
+    // Find user using Supabase client
+    const { data: user, error } = await supabaseAdmin
+      .from('users')
+      .select('id, name, email, password, role, created_at')
+      .eq('email', email)
+      .single()
     
-    if (existingUser.length === 0) {
+    console.log('User found:', !!user)
+    
+    if (error || !user) {
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
       );
     }
-
-    const user = existingUser[0];
 
     // Verify password
     const isValid = await bcrypt.compare(password, user.password);

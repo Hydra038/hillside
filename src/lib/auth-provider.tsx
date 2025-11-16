@@ -126,15 +126,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
-    const res = await fetch('/api/auth/signout', {
-      method: 'POST',
-    })
+    try {
+      const res = await fetch('/api/auth/signout', {
+        method: 'POST',
+        credentials: 'include' // Ensure cookies are sent
+      })
 
-    if (!res.ok) {
-      throw new Error('Failed to sign out')
+      if (!res.ok) {
+        throw new Error('Failed to sign out')
+      }
+
+      // Clear user state
+      setUser(null)
+      
+      // Clear any stored data
+      if (typeof window !== 'undefined') {
+        // Clear cart from localStorage
+        localStorage.removeItem('cart-storage')
+        
+        // Clear any other auth-related data
+        localStorage.clear()
+        sessionStorage.clear()
+        
+        console.log('User signed out and all data cleared')
+      }
+    } catch (error) {
+      console.error('Sign out error:', error)
+      // Even if the API fails, clear local state
+      setUser(null)
+      if (typeof window !== 'undefined') {
+        localStorage.clear()
+        sessionStorage.clear()
+      }
+      throw error
     }
-
-    setUser(null)
   }
 
   const refreshUser = async () => {

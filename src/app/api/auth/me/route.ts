@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { neon } from '@neondatabase/serverless'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 import jwt from 'jsonwebtoken'
 
 if (!process.env.JWT_SECRET) {
@@ -23,12 +23,6 @@ export async function GET() {
       throw new Error('Server configuration error');
     }
 
-    if (!process.env.DATABASE_URL) {
-      throw new Error('DATABASE_URL is not defined')
-    }
-
-    const sql = neon(process.env.DATABASE_URL)
-
     try {
       // Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET) as { 
@@ -39,22 +33,21 @@ export async function GET() {
       
       console.log('/me: Token decoded successfully:', decoded);
       
-      // Get user from database using raw SQL
-      const user = await sql`
-        SELECT id, name, email, role, created_at, updated_at
-        FROM users 
-        WHERE id = ${decoded.userId}
-      `;
+      // Get user from database using Supabase client
+      const { data: user, error } = await supabaseAdmin
+        .from('users')
+        .select('id, name, email, role, created_at, updated_at')
+        .eq('id', decoded.userId)
+        .single()
       
-      if (user.length === 0) {
+      if (error || !user) {
         console.log('/me: No user found with ID:', decoded.userId);
         return NextResponse.json({ user: null }, { status: 200 });
       }
 
       // Return user data without password
-      const userWithoutPassword = user[0];
-      console.log('/me: Returning user data:', userWithoutPassword);
-      return NextResponse.json({ user: userWithoutPassword }, { status: 200 });
+      console.log('/me: Returning user data:', user);
+      return NextResponse.json({ user }, { status: 200 });
     } catch (jwtError) {
       console.error('/me: JWT verification failed:', jwtError);
       // Invalid or expired token
