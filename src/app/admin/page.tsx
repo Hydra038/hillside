@@ -21,10 +21,10 @@ export default async function AdminDashboardPage() {
     name: product.name,
     description: product.description,
     price: product.price?.toString?.() ?? '',
-    imageUrl: product.imageUrl || undefined,
+    imageUrl: product.image_url || undefined,
     category: product.category,
-    stockQuantity: product.stockQuantity,
-    isFeatured: product.isFeatured,
+    stockQuantity: product.stock_quantity,
+    isFeatured: product.is_featured,
     createdAt: product.createdAt
   }));
 
