@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 import jwt from 'jsonwebtoken'
 
 export async function PATCH(
@@ -53,7 +53,7 @@ export async function PATCH(
     }
 
     // Update order status using Supabase
-    const { data: updatedOrder, error } = await supabase
+    const { data: updatedOrder, error } = await supabaseAdmin
       .from('orders')
       .update({ 
         status,
@@ -63,8 +63,17 @@ export async function PATCH(
       .select()
       .single()
 
-    if (error || !updatedOrder) {
+    if (error) {
       console.error('Supabase error updating order:', error)
+      console.error('Order ID:', id, 'Status:', status)
+      return NextResponse.json(
+        { error: `Failed to update order: ${error.message}` },
+        { status: 500 }
+      )
+    }
+    
+    if (!updatedOrder) {
+      console.error('Order not found with ID:', id)
       return NextResponse.json(
         { error: 'Order not found' },
         { status: 404 }
@@ -117,7 +126,7 @@ export async function GET(
     }
 
     // Get specific order with user and order items details using Supabase
-    const { data: order, error: orderError } = await supabase
+    const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
       .select(`
         *,
