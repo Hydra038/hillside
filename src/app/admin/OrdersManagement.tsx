@@ -72,21 +72,27 @@ export default function OrdersManagement() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ status: newStatus.toUpperCase() }),
+        body: JSON.stringify({ status: newStatus.toLowerCase() }),
       })
 
       if (response.ok) {
-        // Update local state
-        setOrders(orders.map(order => 
-          order.id === orderId 
-            ? { ...order, status: newStatus.toUpperCase() as any }
-            : order
-        ))
+        const data = await response.json()
+        // Update local state with the returned order data
+        if (data.order) {
+          setOrders(orders.map(order => 
+            order.id === orderId 
+              ? { ...order, status: data.order.status }
+              : order
+          ))
+        }
       } else {
-        console.error('Failed to update order status')
+        const errorData = await response.json()
+        console.error('Failed to update order status:', errorData)
+        alert(`Failed to update order: ${errorData.error || 'Unknown error'}`)
       }
     } catch (error) {
       console.error('Error updating order:', error)
+      alert('Error updating order status')
     } finally {
       setUpdating(null)
     }

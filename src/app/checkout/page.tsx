@@ -56,8 +56,13 @@ export default function CheckoutPage() {
         
         // Check if data is an array
         if (Array.isArray(data) && data.length > 0) {
-          setPaymentMethods(data)
-          console.log('Payment methods loaded:', data)
+          // Parse config if it's a string
+          const parsedData = data.map((method: any) => ({
+            ...method,
+            config: typeof method.config === 'string' ? JSON.parse(method.config) : method.config
+          }))
+          setPaymentMethods(parsedData)
+          console.log('Payment methods loaded:', parsedData)
         } else {
           console.warn('No payment methods configured')
           setPaymentMethods([])
@@ -378,6 +383,13 @@ export default function CheckoutPage() {
                           <div className="flex flex-col">
                             <span className="text-xs text-gray-600">Bank Name:</span>
                             <span className="font-medium text-gray-900">{method.config.bankName}</span>
+                          </div>
+                        )}
+                        
+                        {method.config.email && (
+                          <div className="flex flex-col">
+                            <span className="text-xs text-gray-600">Email:</span>
+                            <span className="font-mono font-medium text-gray-900">{method.config.email}</span>
                           </div>
                         )}
                         
