@@ -43,20 +43,23 @@ export async function PATCH(
     // Get request data
     const { status } = await request.json()
 
-    // Validate status
+    // Validate status (accept lowercase)
     const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled']
-    if (!validStatuses.includes(status)) {
+    if (!validStatuses.includes(status.toLowerCase())) {
       return NextResponse.json(
         { error: 'Invalid status' },
         { status: 400 }
       )
     }
 
+    // Convert to uppercase for database enum
+    const dbStatus = status.toUpperCase()
+
     // Update order status using Supabase
     const { data: updatedOrder, error } = await supabaseAdmin
       .from('orders')
       .update({ 
-        status,
+        status: dbStatus,
         updated_at: new Date().toISOString()
       })
       .eq('id', id)
