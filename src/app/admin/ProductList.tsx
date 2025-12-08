@@ -38,13 +38,18 @@ export default function ProductList({ products: initialProducts }: ProductListPr
         method: 'DELETE',
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        throw new Error('Failed to delete product')
+        console.error('Delete failed:', data)
+        throw new Error(data.error || 'Failed to delete product')
       }
 
       setProducts(products.filter(p => p.id !== id))
+      alert('Product deleted successfully!')
     } catch (error) {
-      alert('Error deleting product')
+      console.error('Error deleting product:', error)
+      alert(`Error deleting product: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setIsDeleting(prev => ({ ...prev, [id]: false }))
     }
@@ -135,19 +140,19 @@ export default function ProductList({ products: initialProducts }: ProductListPr
   return (
     <div className="space-y-4">
       {/* Search and Filter Bar */}
-      <div className="bg-gray-50 p-4 rounded-lg flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div className="flex flex-col md:flex-row gap-4 flex-1">
+      <div className="bg-gray-50 p-3 sm:p-4 rounded-lg space-y-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <input
             type="text"
             placeholder="Search products..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 flex-1"
+            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 flex-1 text-sm sm:text-base"
           />
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
+            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm sm:text-base"
           >
             <option value="">All Categories</option>
             {categories.map(category => (
@@ -156,17 +161,17 @@ export default function ProductList({ products: initialProducts }: ProductListPr
           </select>
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button
             onClick={exportProducts}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+            className="flex-1 sm:flex-none px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm"
           >
             📊 Export
           </button>
           {selectedProducts.size > 0 && (
             <button
               onClick={handleBulkDelete}
-              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+              className="flex-1 sm:flex-none px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm"
             >
               🗑 Delete ({selectedProducts.size})
             </button>
@@ -174,8 +179,8 @@ export default function ProductList({ products: initialProducts }: ProductListPr
         </div>
       </div>
 
-      {/* Products Table */}
-      <div className="overflow-x-auto bg-white rounded-lg shadow">
+      {/* Products Table - Desktop */}
+      <div className="hidden md:block overflow-x-auto bg-white rounded-lg shadow">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -268,6 +273,74 @@ export default function ProductList({ products: initialProducts }: ProductListPr
 
         {filteredProducts.length === 0 && (
           <div className="text-center py-12">
+            <div className="text-gray-500">
+              {searchTerm || categoryFilter ? 'No products match your filters' : 'No products found'}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Products Cards - Mobile */}
+      <div className="md:hidden space-y-4">
+        {filteredProducts.map((product) => (
+          <div key={product.id} className="bg-white rounded-lg shadow p-4">
+            <div className="flex items-start gap-4">
+              <input
+                type="checkbox"
+                checked={selectedProducts.has(product.id)}
+                onChange={() => toggleProductSelection(product.id)}
+                className="rounded mt-1"
+              />
+              <div className="flex-shrink-0">
+                {product.imageUrl ? (
+                  <img 
+                    className="h-20 w-20 rounded-lg object-cover" 
+                    src={product.imageUrl} 
+                    alt={product.name} 
+                  />
+                ) : (
+                  <div className="h-20 w-20 rounded-lg bg-gray-200 flex items-center justify-center text-3xl">
+                    📦
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-semibold text-gray-900 truncate">{product.name}</h3>
+                <p className="text-sm text-gray-500 line-clamp-2">{product.description}</p>
+                
+                <div className="mt-2 flex flex-wrap gap-2 items-center">
+                  <span className="text-lg font-bold text-amber-600">£{Number(product.price).toFixed(2)}</span>
+                  <span className={`text-sm ${(product.stockQuantity ?? 0) < 10 ? 'text-red-600' : 'text-gray-600'}`}>
+                    Stock: {product.stockQuantity ?? 0}
+                    {(product.stockQuantity ?? 0) < 10 && <span className="ml-1">⚠️</span>}
+                  </span>
+                  <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                    {product.category}
+                  </span>
+                </div>
+                
+                <div className="mt-3 flex gap-2">
+                  <button
+                    className="flex-1 px-3 py-2 text-sm bg-amber-600 text-white rounded-md hover:bg-amber-700"
+                    onClick={() => handleEdit(product)}
+                  >
+                    ✏️ Edit
+                  </button>
+                  <button
+                    className="px-3 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700"
+                    onClick={() => handleDelete(product.id)}
+                    disabled={isDeleting[product.id]}
+                  >
+                    {isDeleting[product.id] ? '⏳' : '🗑️'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+        
+        {filteredProducts.length === 0 && (
+          <div className="text-center py-12 bg-white rounded-lg">
             <div className="text-gray-500">
               {searchTerm || categoryFilter ? 'No products match your filters' : 'No products found'}
             </div>

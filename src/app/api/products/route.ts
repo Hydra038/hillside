@@ -26,27 +26,30 @@ export async function POST(request: Request) {
     console.log('Received product payload:', product);
     
     // Map frontend field names to DB schema
-    if (product.imageUrl) {
-      product.image_url = product.imageUrl;
-      delete product.imageUrl;
-    }
-    if (product.stockQuantity !== undefined) {
-      product.stock_quantity = product.stockQuantity;
-      delete product.stockQuantity;
-    }
-    // features is already an array, do not stringify
-    if (product.dimensions && typeof product.dimensions !== 'string') {
-      product.dimensions = JSON.stringify(product.dimensions);
-    }
+    const dbProduct: any = {
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      category: product.category,
+      image_url: product.imageUrl || product.imageUrlManual || '',
+      stock_quantity: product.stockQuantity,
+      season: product.season,
+      features: product.features // Keep as array
+    };
+    
+    console.log('Mapped DB product:', dbProduct);
     
     // Insert product using Supabase
     const { data: newProduct, error } = await supabaseAdmin
       .from('products')
-      .insert(product)
+      .insert(dbProduct)
       .select()
       .single()
     
-    if (error) throw error
+    if (error) {
+      console.error('Supabase error:', error);
+      throw error;
+    }
     
     return NextResponse.json(newProduct);
   } catch (error) {

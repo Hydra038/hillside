@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { NextRequest } from 'next/server'
-import jwt from 'jsonwebtoken'
 
 export function middleware(request: NextRequest) {
   // Log the current path
@@ -24,23 +23,9 @@ export function middleware(request: NextRequest) {
     '/checkout'
   ]
 
-  // Customer-only paths that admins shouldn't access
-  const customerOnlyPaths = [
-    '/shop',
-    '/about',
-    '/delivery',
-    '/contact',
-    '/account',
-    '/checkout',
-    '/products'
-  ]
-
   // Public paths that shouldn't redirect when authenticated
-  const publicPaths = ['/signin', '/signup', '/admin/signin']
+  const publicPaths = ['/signin', '/signup', '/admin/signin', '/forgot-password', '/reset-password']
   
-  // Admin signin path
-  const isAdminSignin = request.nextUrl.pathname === '/admin/signin'
-
   // Check if the path requires authentication
   const requiresAuth = protectedPaths.some(path => 
     request.nextUrl.pathname.startsWith(path)
@@ -50,36 +35,11 @@ export function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith(path)
   )
 
-  // Skip authentication for public paths
-  if (isPublicPath) {
-    return NextResponse.next()
-  }
+  console.log('Path:', request.nextUrl.pathname, 'Requires Auth:', requiresAuth, 'Is Public:', isPublicPath)
 
-  const isCustomerOnlyPath = customerOnlyPaths.some(path =>
-    request.nextUrl.pathname.startsWith(path)
-  )
-
-  console.log('Path:', request.nextUrl.pathname, 'Requires Auth:', requiresAuth, 'Is Public:', isPublicPath, 'Is Customer Only:', isCustomerOnlyPath, 'Is Admin Signin:', isAdminSignin)
-
-  // Verify authentication
+  // Check if token exists (but don't verify it in middleware - let API routes/pages handle that)
   const token = request.cookies.get('auth-token')?.value
   console.log('Token present:', !!token)
-
-  // Check user role if token exists
-  let userRole = null
-  if (token) {
-    try {
-      if (!process.env.JWT_SECRET) {
-        console.error('JWT_SECRET not available in middleware!')
-        throw new Error('JWT_SECRET not configured')
-      }
-      const decoded = jwt.verify(token, process.env.JWT_SECRET) as jwt.JwtPayload
-      userRole = decoded.role
-      console.log('User role:', userRole)
-    } catch (error) {
-      console.log('Invalid token error:', error instanceof Error ? error.message : error)
-    }
-  }
 
   // Handle unauthenticated users
   if (!token) {
@@ -99,44 +59,14 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Token exists, handle authenticated users
-  console.log('Token found, user role:', userRole)
-
-  // Redirect admin users away from customer-only pages (case-insensitive)
-  if (userRole?.toLowerCase() === 'admin' && isCustomerOnlyPath) {
-    console.log('Admin user accessing customer page, redirecting to admin dashboard')
-    return NextResponse.redirect(new URL('/admin', request.url))
-  }
-
-  // Redirect admin users from home page to admin dashboard (case-insensitive)
-  if (userRole?.toLowerCase() === 'admin' && request.nextUrl.pathname === '/') {
-    console.log('Admin user accessing home page, redirecting to admin dashboard')
-    return NextResponse.redirect(new URL('/admin', request.url))
-  }
-
-  // Handle authenticated users accessing signin pages
-  if (isPublicPath || isAdminSignin) {
-    if (userRole?.toLowerCase() === 'admin') {
-      console.log('Authenticated admin accessing signin page, redirecting to admin dashboard')
-      return NextResponse.redirect(new URL('/admin', request.url))
-    } else if (!isAdminSignin) {
-      console.log('Authenticated user accessing public path, redirecting to home')
-      return NextResponse.redirect(new URL('/', request.url))
-    }
-  }
-
-  // Prevent non-admin users from accessing admin signin (case-insensitive)
-  if (isAdminSignin && userRole && userRole.toLowerCase() !== 'admin') {
-    console.log('Non-admin user accessing admin signin, redirecting to regular signin')
-    return NextResponse.redirect(new URL('/signin', request.url))
-  }
-
+  // Token exists - let the page/API handle role verification
+  console.log('Token found, allowing access')
   return NextResponse.next()
 }
 
 export const config = {
   matcher: [
-    // Home page (to redirect admin to dashboard)
+    // Home page
     '/',
     
     // Protected client routes
@@ -144,17 +74,19 @@ export const config = {
     '/admin/:path*',
     '/checkout/:path*',
     
-    // Customer-only routes (redirect admin away)
+    // Public routes (to check auth and potentially redirect)
     '/shop/:path*',
     '/about/:path*',
     '/delivery/:path*',
     '/contact/:path*',
     '/products/:path*',
     
-    // Auth pages (to redirect when already authenticated)
+    // Auth pages
     '/signin',
     '/signup',
     '/admin/signin',
+    '/forgot-password',
+    '/reset-password',
     
     // Protected API routes
     '/api/orders/:path*',

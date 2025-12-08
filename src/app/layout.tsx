@@ -1,23 +1,24 @@
 import type { Metadata } from "next";
-import { Inter, Poppins } from "next/font/google";
+import { Playfair_Display, Lora } from "next/font/google";
 import "./globals.css";
 import ClientLayout from "./client-layout";
 
-const inter = Inter({
+const playfair = Playfair_Display({
   subsets: ["latin"],
   display: 'swap',
   preload: true,
   adjustFontFallback: true,
-  variable: '--font-inter',
+  variable: '--font-playfair',
+  weight: ['400', '500', '600', '700', '800', '900'],
 });
 
-const poppins = Poppins({
+const lora = Lora({
   subsets: ["latin"],
   display: 'swap',
   preload: true,
   adjustFontFallback: true,
-  variable: '--font-poppins',
-  weight: ['300', '400', '500', '600', '700', '800'],
+  variable: '--font-lora',
+  weight: ['400', '500', '600', '700'],
 });
 
 export const metadata: Metadata = {
@@ -57,7 +58,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${poppins.variable}`}>
+    <html lang="en" className={`${playfair.variable} ${lora.variable}`}>
       <body className="antialiased min-h-screen flex flex-col font-sans bg-background text-foreground">
         <ClientLayout>{children}</ClientLayout>
       </body>

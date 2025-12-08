@@ -68,22 +68,39 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
+    console.log('Attempting to delete product with ID:', id)
     
-    const { data: deletedProduct, error } = await supabaseAdmin
+    // First check if product exists
+    const { data: existingProduct, error: fetchError } = await supabaseAdmin
       .from('products')
-      .delete()
+      .select('*')
       .eq('id', parseInt(id))
-      .select()
       .single()
 
-    if (error || !deletedProduct) {
+    if (fetchError || !existingProduct) {
+      console.error('Product not found for deletion:', id, fetchError)
       return NextResponse.json(
         { error: 'Product not found' },
         { status: 404 }
       )
     }
 
-    return NextResponse.json(deletedProduct)
+    // Delete the product
+    const { error: deleteError } = await supabaseAdmin
+      .from('products')
+      .delete()
+      .eq('id', parseInt(id))
+
+    if (deleteError) {
+      console.error('Error deleting product:', deleteError)
+      return NextResponse.json(
+        { error: 'Failed to delete product', details: deleteError.message },
+        { status: 500 }
+      )
+    }
+
+    console.log('Successfully deleted product:', id)
+    return NextResponse.json({ success: true, id: parseInt(id) })
   } catch (error) {
     console.error('Error deleting product:', error)
     return NextResponse.json(
