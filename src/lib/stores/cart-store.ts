@@ -7,6 +7,7 @@ interface CartItem {
   price: number
   quantity: number
   imageUrl?: string
+  stockQuantity?: number
 }
 
 interface CartStore {
@@ -49,10 +50,16 @@ export const useCartStore = create<CartStore>()(
         set((state) => {
           const existingItem = state.items.find((i) => i.id === item.id)
           if (existingItem) {
+            // Check stock limit before incrementing
+            const stockLimit = item.stockQuantity ?? existingItem.stockQuantity ?? Infinity;
+            if (existingItem.quantity >= stockLimit) {
+              console.warn(`Cannot add more. Stock limit: ${stockLimit}`);
+              return state; // Return unchanged state
+            }
             // If item exists, increment quantity
             const updatedItems = state.items.map((i) =>
               i.id === item.id
-                ? { ...i, quantity: i.quantity + 1 }
+                ? { ...i, quantity: i.quantity + 1, stockQuantity: item.stockQuantity }
                 : i
             )
             return {

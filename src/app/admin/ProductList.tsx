@@ -82,18 +82,56 @@ export default function ProductList({ products: initialProducts }: ProductListPr
       const response = await fetch(`/api/products/${updatedProduct.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedProduct),
+        body: JSON.stringify({
+          name: updatedProduct.name,
+          price: updatedProduct.price,
+          description: updatedProduct.description,
+          category: updatedProduct.category,
+          image_url: updatedProduct.imageUrl,
+          stock_quantity: updatedProduct.stockQuantity,
+          is_featured: updatedProduct.isFeatured || false,
+        }),
       })
 
       if (!response.ok) throw new Error('Failed to update product')
 
+      const updated = await response.json()
       setProducts(products.map(p => 
-        p.id === updatedProduct.id ? updatedProduct : p
+        p.id === updated.id ? {
+          ...updatedProduct,
+          imageUrl: updated.image_url,
+          stockQuantity: updated.stock_quantity,
+          isFeatured: updated.is_featured,
+        } : p
       ))
       setShowEditModal(false)
       setEditingProduct(null)
     } catch (error) {
       alert('Error updating product')
+    }
+  }
+
+  async function handleToggleFeatured(product: Product) {
+    try {
+      const response = await fetch(`/api/products/${product.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          is_featured: !product.isFeatured,
+        }),
+      })
+
+      if (!response.ok) throw new Error('Failed to update featured status')
+
+      const updated = await response.json()
+      setProducts(products.map(p => 
+        p.id === updated.id ? {
+          ...p,
+          isFeatured: updated.is_featured,
+        } : p
+      ))
+    } catch (error) {
+      alert('Error updating featured status')
     }
   }
 
@@ -204,6 +242,9 @@ export default function ProductList({ products: initialProducts }: ProductListPr
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Category
               </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Featured
+              </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
@@ -250,6 +291,19 @@ export default function ProductList({ products: initialProducts }: ProductListPr
                   <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
                     {product.category}
                   </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <button
+                    onClick={() => handleToggleFeatured(product)}
+                    className={`text-2xl transition-all ${
+                      product.isFeatured 
+                        ? 'opacity-100 hover:scale-110' 
+                        : 'opacity-30 hover:opacity-60'
+                    }`}
+                    title={product.isFeatured ? 'Remove from featured' : 'Add to featured'}
+                  >
+                    ⭐
+                  </button>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button
@@ -305,7 +359,20 @@ export default function ProductList({ products: initialProducts }: ProductListPr
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-semibold text-gray-900 truncate">{product.name}</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-semibold text-gray-900 truncate">{product.name}</h3>
+                  <button
+                    onClick={() => handleToggleFeatured(product)}
+                    className={`text-xl transition-all ${
+                      product.isFeatured 
+                        ? 'opacity-100' 
+                        : 'opacity-30'
+                    }`}
+                    title={product.isFeatured ? 'Remove from featured' : 'Add to featured'}
+                  >
+                    ⭐
+                  </button>
+                </div>
                 <p className="text-sm text-gray-500 line-clamp-2">{product.description}</p>
                 
                 <div className="mt-2 flex flex-wrap gap-2 items-center">
@@ -448,6 +515,20 @@ function EditProductModal({
                 onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
               />
+            </div>
+
+            <div>
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.isFeatured || false}
+                  onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
+                  className="rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  ⭐ Featured Product (Show on homepage)
+                </span>
+              </label>
             </div>
           </div>
 

@@ -19,13 +19,27 @@ export default function ProductDetails({ product }: Props) {
   const isInCart = !!cartItem
 
   const handleAddToCart = () => {
+    // Check stock before adding
+    const stockQuantity = product.stockQuantity ?? 0;
+    if (stockQuantity === 0) {
+      return;
+    }
+
+    // Check if adding would exceed stock
+    const currentQuantityInCart = cartItem?.quantity || 0;
+    if (currentQuantityInCart >= stockQuantity) {
+      alert(`Sorry, only ${stockQuantity} available in stock`);
+      return;
+    }
+
     setIsAdding(true)
     const price = typeof product.price === 'string' ? Number(product.price) : product.price
     addItem({
       id: product.id,
       name: product.name,
       price,
-      imageUrl: product.imageUrl
+      imageUrl: product.imageUrl,
+      stockQuantity: product.stockQuantity
     })
     setTimeout(() => {
       setIsAdding(false)
@@ -36,7 +50,7 @@ export default function ProductDetails({ product }: Props) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
-      <div className="relative w-full aspect-square">
+      <div className="relative w-full" style={{ aspectRatio: '4/3' }}>
         {product.imageUrl && (
           <Image
             src={product.imageUrl}
@@ -49,6 +63,35 @@ export default function ProductDetails({ product }: Props) {
       <div className="px-2 sm:px-0">
         <h1 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">{product.name}</h1>
         <p className="text-xl sm:text-2xl font-semibold mb-3 sm:mb-4 text-amber-700">£{Number(product.price).toFixed(2)}</p>
+        
+        {/* Stock Indicator */}
+        <div className="mb-4">
+          {(product.stockQuantity ?? 0) > 0 ? (
+            (product.stockQuantity ?? 0) < 10 ? (
+              <div className="flex items-center gap-2 text-amber-600">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span className="font-semibold">Only {product.stockQuantity} left in stock!</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-green-600">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="font-semibold">In Stock ({product.stockQuantity} available)</span>
+              </div>
+            )
+          ) : (
+            <div className="flex items-center gap-2 text-red-600">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="font-semibold">Out of Stock</span>
+            </div>
+          )}
+        </div>
+        
         <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 leading-relaxed">{product.description}</p>
         <div className="space-y-3 sm:space-y-4">
           {(product.stockQuantity ?? 0) > 0 ? (

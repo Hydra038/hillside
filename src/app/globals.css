@@ -85,3 +85,13 @@ h3 {
 .text-shadow-xl {
   text-shadow: 0 6px 12px rgba(0, 0, 0, 0.6);
 }
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}

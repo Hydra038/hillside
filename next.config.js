@@ -6,7 +6,7 @@ const nextConfig = {
     },
   },
   images: {
-    domains: ['images.unsplash.com'],
+    domains: ['images.unsplash.com', 'fyjmczdbllubrssixpnx.supabase.co'],
   },
 };
 

@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { type Product } from '@/types/product'
 import { useCartStore } from '@/lib/stores/cart-store'
 import { useState } from 'react'
@@ -27,13 +28,26 @@ export default function ProductCard({ product }: ProductCardProps) {
   const stockQuantity = product.stockQuantity ?? 0;
 
   const handleAddToCart = () => {
+    // Check stock before adding
+    if (stockQuantity === 0) {
+      return;
+    }
+
+    // Check if adding would exceed stock
+    const currentQuantityInCart = cartItem?.quantity || 0;
+    if (currentQuantityInCart >= stockQuantity) {
+      alert(`Sorry, only ${stockQuantity} available in stock`);
+      return;
+    }
+
     setIsAdding(true)
     const price = typeof product.price === 'string' ? Number(product.price) : product.price
     addItem({
       id: product.id,
       name: product.name,
       price,
-      imageUrl: product.imageUrl || undefined
+      imageUrl: product.imageUrl || undefined,
+      stockQuantity: product.stockQuantity
     })
     setTimeout(() => {
       setIsAdding(false)
@@ -55,12 +69,22 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
       )}
       
-      {product.imageUrl && (
-        <img 
-          src={product.imageUrl} 
-          alt={product.name}
-          className="w-full h-48 object-cover"
-        />
+      {product.imageUrl ? (
+        <div className="relative w-full h-32 bg-gray-100">
+          <Image
+            src={product.imageUrl}
+            alt={product.name}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          />
+        </div>
+      ) : (
+        <div className="w-full h-32 bg-gray-200 flex items-center justify-center">
+          <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
       )}
       
       <div className="p-4">

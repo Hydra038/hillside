@@ -1,13 +1,14 @@
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Initialize Resend only if API key is available
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
 export async function sendPasswordResetEmail(email: string, resetToken: string) {
   try {
     const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`
     
     // If no Resend API key is configured, just log the reset link
-    if (!process.env.RESEND_API_KEY) {
+    if (!process.env.RESEND_API_KEY || !resend) {
       console.log('⚠️  No RESEND_API_KEY configured. Reset link:')
       console.log('🔗 Reset URL:', resetUrl)
       console.log('📧 For:', email)
@@ -123,6 +124,36 @@ export async function sendPasswordResetEmail(email: string, resetToken: string) 
     return true
   } catch (error) {
     console.error('❌ Failed to send password reset email:', error)
+    throw error
+  }
+}
+
+export async function sendEmail({ to, subject, html }: { to: string; subject: string; html: string }) {
+  try {
+    // If no Resend API key is configured, just log
+    if (!process.env.RESEND_API_KEY || !resend) {
+      console.log('⚠️  No RESEND_API_KEY configured. Email details:')
+      console.log('📧 To:', to)
+      console.log('📋 Subject:', subject)
+      return true
+    }
+
+    const { data, error } = await resend.emails.send({
+      from: process.env.EMAIL_FROM || 'onboarding@resend.dev',
+      to: [to],
+      subject,
+      html,
+    })
+
+    if (error) {
+      console.error('❌ Error sending email:', error)
+      throw new Error('Failed to send email')
+    }
+
+    console.log('✅ Email sent successfully:', data)
+    return true
+  } catch (error) {
+    console.error('❌ Failed to send email:', error)
     throw error
   }
 }

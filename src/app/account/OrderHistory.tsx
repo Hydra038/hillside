@@ -6,6 +6,7 @@ import { Order } from '@/types/db'
 export default function OrderHistory() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
 
   useEffect(() => {
@@ -18,11 +19,15 @@ export default function OrderHistory() {
       if (response.ok) {
         const data = await response.json()
         setOrders(data.orders || [])
+        setError('')
       } else {
-        console.error('Failed to fetch orders')
+        const errorText = await response.text()
+        console.error('Failed to fetch orders:', response.status, errorText)
+        setError(`Failed to load orders. Please try again later. (Status: ${response.status})`)
       }
     } catch (error) {
       console.error('Error fetching orders:', error)
+      setError('Unable to connect to the server. Please check your internet connection.')
     } finally {
       setLoading(false)
     }
@@ -59,6 +64,18 @@ export default function OrderHistory() {
           <div className="h-4 bg-gray-200 rounded w-3/4"></div>
           <div className="h-4 bg-gray-200 rounded w-1/2"></div>
           <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+        </div>
+      ) : error ? (
+        <div className="text-center py-8">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+          <button
+            onClick={fetchOrders}
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-xs sm:text-sm font-medium text-white bg-amber-600 hover:bg-amber-700"
+          >
+            Try Again
+          </button>
         </div>
       ) : orders.length === 0 ? (
         <div className="text-center py-8">
