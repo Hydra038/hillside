@@ -190,3 +190,78 @@ export async function GET(
     )
   }
 }
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    // Await params in Next.js 15
+    const { id } = await params
+    
+    // Verify admin authentication
+    const cookieStore = await cookies()
+    const token = cookieStore.get('auth-token')?.value
+
+    if (!token) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+      userId: string;
+      email: string;
+      role: string;
+    }
+
+    if (decoded.role?.toLowerCase() !== 'admin') {
+      return NextResponse.json(
+        { error: 'Admin access required' },
+        { status: 403 }
+      )
+    }
+
+    // First delete order items (foreign key constraint)
+    const { error: itemsError } = await supabaseAdmin
+      .from('order_items')
+      .delete()
+      .eq('order_id', id)
+
+    if (itemsError) {
+      console.error('Error deleting order items:', itemsError)
+      return NextResponse.json(
+        { error: 'Failed to delete order items' },
+        { status: 500 }
+      )
+    }
+
+    // Then delete the order
+    const { error: orderError } = await supabaseAdmin
+      .from('orders')
+      .delete()
+      .eq('id', id)
+
+    if (orderError) {
+      console.error('Error deleting order:', orderError)
+      return NextResponse.json(
+        { error: 'Failed to delete order' },
+        { status: 500 }
+      )
+    }
+
+    console.log(`Order ${id} deleted by admin ${decoded.email}`)
+
+    return NextResponse.json({ 
+      success: true,
+      message: 'Order deleted successfully'
+    })
+  } catch (error) {
+    console.error('Error deleting order:', error)
+    return NextResponse.json(
+      { error: 'Failed to delete order' },
+      { status: 500 }
+    )
+  }
+}

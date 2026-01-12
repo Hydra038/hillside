@@ -25,6 +25,7 @@ export default function OrdersManagement() {
   const [orders, setOrders] = useState<OrderWithUser[]>([])
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState<string | null>(null)
   const [filter, setFilter] = useState<string>('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedOrder, setSelectedOrder] = useState<OrderWithUser | null>(null)
@@ -109,6 +110,59 @@ export default function OrdersManagement() {
       setSelectedOrders(new Set())
     } catch (error) {
       console.error('Error in bulk update:', error)
+    }
+  }
+
+  const deleteOrder = async (orderId: string) => {
+    if (!confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
+      return
+    }
+
+    setDeleting(orderId)
+    try {
+      const response = await fetch(`/api/admin/orders/${orderId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        setOrders(orders.filter(order => order.id !== orderId))
+        if (selectedOrder?.id === orderId) {
+          setShowDetails(false)
+          setSelectedOrder(null)
+        }
+        alert('Order deleted successfully')
+      } else {
+        const errorData = await response.json()
+        console.error('Failed to delete order:', errorData)
+        alert(`Failed to delete order: ${errorData.error || 'Unknown error'}`)
+      }
+    } catch (error) {
+      console.error('Error deleting order:', error)
+      alert('Error deleting order')
+    } finally {
+      setDeleting(null)
+    }
+  }
+
+  const bulkDeleteOrders = async () => {
+    if (selectedOrders.size === 0) return
+    
+    if (!confirm(`Are you sure you want to delete ${selectedOrders.size} order(s)? This action cannot be undone.`)) {
+      return
+    }
+
+    try {
+      const promises = Array.from(selectedOrders).map(orderId =>
+        fetch(`/api/admin/orders/${orderId}`, { method: 'DELETE' })
+      )
+      await Promise.all(promises)
+      
+      setOrders(orders.filter(order => !selectedOrders.has(order.id)))
+      setSelectedOrders(new Set())
+      alert(`${selectedOrders.size} order(s) deleted successfully`)
+    } catch (error) {
+      console.error('Error in bulk delete:', error)
+      alert('Error deleting orders')
     }
   }
 
@@ -233,16 +287,28 @@ export default function OrdersManagement() {
               {selectedOrders.size} selected
             </span>
             <select
-              onChange={(e) => bulkUpdateStatus(e.target.value)}
+              onChange={(e) => {
+                if (e.target.value) {
+                  bulkUpdateStatus(e.target.value)
+                  e.target.value = ''
+                }
+              }}
               className="px-2 sm:px-3 py-1 border border-gray-300 rounded text-xs sm:text-sm"
+              defaultValue=""
             >
-              <option value="">Bulk Action</option>
+              <option value="">Update Status</option>
               <option value="pending">Mark Pending</option>
               <option value="processing">Mark Processing</option>
               <option value="shipped">Mark Shipped</option>
               <option value="delivered">Mark Delivered</option>
               <option value="cancelled">Mark Cancelled</option>
             </select>
+            <button
+              onClick={bulkDeleteOrders}
+              className="px-3 py-1 bg-red-600 text-white rounded text-xs sm:text-sm hover:bg-red-700 transition-colors"
+            >
+              🗑️ Delete Selected
+            </button>
           </div>
         )}
       </div>
@@ -335,21 +401,38 @@ export default function OrdersManagement() {
                       {order.status.toLowerCase()}
                     </span>
                   </td>
-                  <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-sm space-x-2">
-                    <select
-                      value={order.status.toLowerCase()}
-                      onChange={(e) => updateOrderStatus(order.id, e.target.value)}
-                      disabled={updating === order.id}
-                      className="border border-gray-300 rounded-md px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="processing">Processing</option>
-                      <option value="shipped">Shipped</option>
-                      <option value="delivered">Delivered</option>
-                      <option value="cancelled">Cancelled</option>
-                    </select>
+                  <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-sm">
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={order.status.toLowerCase()}
+                        onChange={(e) => updateOrderStatus(order.id, e.target.value)}
+                        disabled={updating === order.id || deleting === order.id}
+                        className="border border-gray-300 rounded-md px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="processing">Processing</option>
+                        <option value="shipped">Shipped</option>
+                        <option value="delivered">Delivered</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
+                      <button
+                        onClick={() => deleteOrder(order.id)}
+                        disabled={deleting === order.id || updating === order.id}
+                        className={`px-2 py-1 text-xs font-medium text-white rounded transition-colors ${
+                          deleting === order.id
+                            ? 'bg-gray-400 cursor-not-allowed'
+                            : 'bg-red-600 hover:bg-red-700'
+                        }`}
+                        title="Delete order"
+                      >
+                        {deleting === order.id ? '⏳' : '🗑️'}
+                      </button>
+                    </div>
                     {updating === order.id && (
-                      <span className="text-xs text-gray-500">Updating...</span>
+                      <span className="text-xs text-gray-500 mt-1 block">Updating...</span>
+                    )}
+                    {deleting === order.id && (
+                      <span className="text-xs text-gray-500 mt-1 block">Deleting...</span>
                     )}
                   </td>
                 </tr>
@@ -375,12 +458,27 @@ export default function OrdersManagement() {
             <div className="p-4 sm:p-6">
               <div className="flex justify-between items-center mb-4 sm:mb-6">
                 <h2 className="text-lg sm:text-2xl font-bold">Order #{selectedOrder.id.slice(0, 8)}</h2>
-                <button
-                  onClick={() => setShowDetails(false)}
-                  className="text-gray-500 hover:text-gray-700 text-2xl sm:text-xl leading-none"
-                >
-                  ✕
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      deleteOrder(selectedOrder.id)
+                    }}
+                    disabled={deleting === selectedOrder.id}
+                    className={`px-3 py-1.5 text-xs sm:text-sm font-medium text-white rounded transition-colors ${
+                      deleting === selectedOrder.id
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-red-600 hover:bg-red-700'
+                    }`}
+                  >
+                    {deleting === selectedOrder.id ? '⏳ Deleting...' : '🗑️ Delete'}
+                  </button>
+                  <button
+                    onClick={() => setShowDetails(false)}
+                    className="text-gray-500 hover:text-gray-700 text-2xl sm:text-xl leading-none"
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
