@@ -19,8 +19,8 @@ export function middleware(request: NextRequest) {
   // Paths that require authentication
   const protectedPaths = [
     '/account',
-    '/admin',
-    '/checkout'
+    '/admin'
+    // Removed /checkout to allow guest checkout
   ]
 
   // Public paths that shouldn't redirect when authenticated

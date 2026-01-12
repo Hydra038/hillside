@@ -33,10 +33,14 @@ export default function CheckoutPage() {
   const { items, total, clearCart } = useCartStore()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [isGuest, setIsGuest] = useState(false)
+  const [showAuthOptions, setShowAuthOptions] = useState(false)
+  const [hasChosenCheckoutType, setHasChosenCheckoutType] = useState(false)
 
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
+    phone: '',
     address: {
       street: '',
       city: '',
@@ -51,8 +55,11 @@ export default function CheckoutPage() {
   useEffect(() => {
     async function fetchPaymentMethods() {
       try {
+        console.log('Fetching payment methods...')
         const res = await fetch('/api/payment-methods')
+        console.log('Payment methods response status:', res.status)
         const data = await res.json()
+        console.log('Payment methods data:', data)
         
         // Check if data is an array
         if (Array.isArray(data) && data.length > 0) {
@@ -62,13 +69,13 @@ export default function CheckoutPage() {
             config: typeof method.config === 'string' ? JSON.parse(method.config) : method.config
           }))
           setPaymentMethods(parsedData)
-          console.log('Payment methods loaded:', parsedData)
+          console.log('Payment methods loaded successfully:', parsedData.length, 'methods')
         } else {
-          console.warn('No payment methods configured')
+          console.warn('No payment methods configured in database')
           setPaymentMethods([])
         }
       } catch (err) {
-        console.error('Failed to fetch payment methods', err)
+        console.error('Failed to fetch payment methods:', err)
         setPaymentMethods([])
       }
     }
@@ -150,7 +157,13 @@ export default function CheckoutPage() {
           items: orderItems,
           total,
           shippingAddress: formData.address,
-          paymentMethod: selectedPaymentMethod
+          paymentMethod: selectedPaymentMethod,
+          guestCheckout: isGuest,
+          guestInfo: isGuest ? {
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone
+          } : undefined
         }),
       })
 
@@ -192,9 +205,142 @@ export default function CheckoutPage() {
 
   return (
     <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
-      <h1 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8">Checkout</h1>
+      <div className="flex items-center gap-4 mb-6 sm:mb-8">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          <span className="text-sm font-medium">Back</span>
+        </button>
+        <h1 className="text-2xl sm:text-3xl font-bold">Checkout</h1>
+      </div>
 
-      {error && (
+      {/* Guest Checkout Options - Only show if not logged in AND haven't chosen yet */}
+      {!user && !hasChosenCheckoutType && (
+        <div className="mb-6 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-900">How would you like to checkout?</h2>
+            <button
+              onClick={() => router.push('/shop')}
+              className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Back to Shop
+            </button>
+          </div>
+          
+          <div className="grid md:grid-cols-2 gap-4">
+            {/* Guest Checkout Option */}
+            <button
+              onClick={() => {
+                setIsGuest(true)
+                setHasChosenCheckoutType(true)
+                setShowAuthOptions(false)
+              }}
+              className="flex flex-col items-start p-6 bg-white border-2 border-amber-300 rounded-lg hover:border-amber-500 hover:shadow-md transition-all group"
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center text-white text-2xl">
+                  🛒
+                </div>
+                <h3 className="text-lg font-bold text-gray-900">Continue as Guest</h3>
+              </div>
+              <p className="text-sm text-gray-600 text-left">
+                Quick checkout without creating an account. You'll still receive order confirmation via email.
+              </p>
+              <div className="mt-4 flex items-center text-amber-600 font-semibold text-sm group-hover:text-amber-700">
+                <span>Continue →</span>
+              </div>
+            </button>
+
+            {/* Sign In / Sign Up Option */}
+            <button
+              onClick={() => setShowAuthOptions(true)}
+              className="flex flex-col items-start p-6 bg-white border-2 border-gray-300 rounded-lg hover:border-amber-500 hover:shadow-md transition-all group"
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white text-2xl">
+                  👤
+                </div>
+                <h3 className="text-lg font-bold text-gray-900">Sign In / Sign Up</h3>
+              </div>
+              <p className="text-sm text-gray-600 text-left">
+                Create an account or sign in to track orders, save addresses, and get exclusive offers.
+              </p>
+              <div className="mt-4 flex items-center text-blue-600 font-semibold text-sm group-hover:text-blue-700">
+                <span>Sign In →</span>
+              </div>
+            </button>
+          </div>
+
+          {showAuthOptions && (
+            <div className="mt-6 p-6 bg-white rounded-lg border-2 border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Choose an option</h3>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <button
+                  onClick={() => router.push('/signin?redirect=/checkout')}
+                  className="px-6 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium"
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => router.push('/signup?redirect=/checkout')}
+                  className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
+                >
+                  Create Account
+                </button>
+                <button
+                  onClick={() => setShowAuthOptions(false)}
+                  className="px-6 py-3 bg-white text-gray-700 border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  Back
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Show checkout form only when user is logged in OR guest has been chosen */}
+      {(user || hasChosenCheckoutType) && (
+        <>
+          {isGuest && (
+            <div className="mb-4 p-4 bg-blue-50 border-l-4 border-blue-400 rounded-md">
+              <div className="flex items-start justify-between">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-blue-700">
+                      You're checking out as a guest. You can create an account later to track your orders.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setIsGuest(false)
+                    setHasChosenCheckoutType(false)
+                  }}
+                  className="ml-4 flex-shrink-0 text-sm text-blue-700 hover:text-blue-900 font-medium"
+                >
+                  Change
+                </button>
+              </div>
+            </div>
+          )}
+
+          {error && (
         <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-50 border-l-4 border-red-400 rounded-md">
           <div className="flex">
             <div className="flex-shrink-0">
@@ -242,6 +388,24 @@ export default function CheckoutPage() {
                 className="mt-1 block w-full px-3 py-2 text-sm rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500"
               />
             </div>
+
+            {isGuest && (
+              <div>
+                <label htmlFor="phone" className="block text-xs sm:text-sm font-medium text-gray-700">
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  required
+                  placeholder="+44 7XXX XXXXXX"
+                  className="mt-1 block w-full px-3 py-2 text-sm rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500"
+                />
+              </div>
+            )}
 
             <div>
               <label htmlFor="address.street" className="block text-xs sm:text-sm font-medium text-gray-700">
@@ -322,21 +486,29 @@ export default function CheckoutPage() {
               <label htmlFor="paymentMethod" className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                 Payment Method
               </label>
-              <select
-                id="paymentMethod"
-                name="paymentMethod"
-                value={selectedPaymentMethod}
-                onChange={e => setSelectedPaymentMethod(e.target.value)}
-                required
-                className="mt-1 block w-full px-3 py-2 text-sm rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500"
-              >
-                <option value="">Select payment method</option>
-                {paymentMethods.map((method: any) => (
-                  <option key={method.id} value={method.type || method.id}>
-                    {method.display_name || method.displayName}
-                  </option>
-                ))}
-              </select>
+              {paymentMethods.length === 0 ? (
+                <div className="mt-1 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-sm text-yellow-800">
+                    ⚠️ No payment methods are currently configured. Please contact the store administrator.
+                  </p>
+                </div>
+              ) : (
+                <select
+                  id="paymentMethod"
+                  name="paymentMethod"
+                  value={selectedPaymentMethod}
+                  onChange={e => setSelectedPaymentMethod(e.target.value)}
+                  required
+                  className="mt-1 block w-full px-3 py-2 text-sm rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500"
+                >
+                  <option value="">Select payment method</option>
+                  {paymentMethods.map((method: any) => (
+                    <option key={method.id} value={method.type || method.id}>
+                      {method.display_name || method.displayName}
+                    </option>
+                  ))}
+                </select>
+              )}
               
               {/* Payment Details Box */}
               {selectedPaymentMethod && (() => {
@@ -473,6 +645,8 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
+        </>
+      )}
     </div>
   )
 

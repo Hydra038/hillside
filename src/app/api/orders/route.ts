@@ -38,29 +38,50 @@ export async function POST(request: Request) {
     const cookieStore = await cookies()
     const token = cookieStore.get('auth-token')?.value
 
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const { items, total, shippingAddress, paymentMethod, guestCheckout, guestInfo } = await request.json()
+
+    let userId = null
+    let userName = ''
+    let userEmail = ''
+
+    if (guestCheckout) {
+      // Guest checkout - no authentication required
+      userName = guestInfo.name
+      userEmail = guestInfo.email
+      // userId will remain null for guest orders
+    } else {
+      // Authenticated user checkout
+      if (!token) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any
+      userId = decoded.userId
+
+      // Get user details
+      const { data: user } = await supabaseAdmin
+        .from('users')
+        .select('name, email')
+        .eq('id', userId)
+        .single()
+
+      if (user) {
+        userName = user.name
+        userEmail = user.email
+      }
     }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any
-
-    const { items, total, shippingAddress, paymentMethod } = await request.json()
-
-    // Get user details
-    const { data: user } = await supabaseAdmin
-      .from('users')
-      .select('name, email')
-      .eq('id', decoded.userId)
-      .single()
 
     const { data: order, error } = await supabaseAdmin
       .from('orders')
       .insert({
-        user_id: decoded.userId,
+        user_id: userId, // Will be null for guest orders
         total: total.toString(),
         shipping_address: shippingAddress,
         payment_method: paymentMethod,
-        status: 'pending'
+        status: 'pending',
+        guest_name: guestCheckout ? userName : null,
+        guest_email: guestCheckout ? userEmail : null,
+        guest_phone: guestCheckout ? guestInfo.phone : null
       })
       .select()
       .single()
@@ -70,7 +91,7 @@ export async function POST(request: Request) {
     }
 
     // Send order confirmation email
-    if (user) {
+    if (userName && userEmail) {
       try {
         const itemsHtml = items.map((item: any) => `
           <tr style="border-bottom: 1px solid #e5e7eb;">
@@ -87,7 +108,7 @@ export async function POST(request: Request) {
             </div>
             
             <div style="background-color: #ffffff; padding: 30px;">
-              <p style="font-size: 16px; color: #374151;">Hi ${user.name},</p>
+              <p style="font-size: 16px; color: #374151;">Hi ${userName},</p>
               <p style="font-size: 16px; color: #374151;">Thank you for your order! We've received your payment and are preparing your firewood for delivery.</p>
               
               <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
@@ -150,7 +171,7 @@ export async function POST(request: Request) {
         `
 
         await sendEmail({
-          to: user.email,
+          to: userEmail,
           subject: `Order Confirmation #${order.id} - Hillside Logs Fuel`,
           html: orderConfirmationHtml,
         })

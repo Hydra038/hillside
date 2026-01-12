@@ -37,7 +37,7 @@ export default function Cart({ isOpen, setIsOpen }: CartProps) {
 
   const handleCheckout = async () => {
     try {
-      console.log('handleCheckout called, user:', user, 'items:', items.length)
+      console.log('handleCheckout called, items:', items.length)
       
       if (items.length === 0) {
         console.log('No items in cart')
@@ -46,14 +46,8 @@ export default function Cart({ isOpen, setIsOpen }: CartProps) {
       
       setIsRedirecting(true)
 
-      if (!user) {
-        console.log('User not signed in, redirecting to signin')
-        setIsOpen(false)
-        router.push('/signin?redirect=/checkout')
-        return
-      }
-
-      console.log('User signed in, redirecting to checkout')
+      // Allow checkout for both authenticated and guest users
+      console.log('Redirecting to checkout')
       setIsOpen(false) // Close cart before redirecting
       router.push('/checkout')
     } catch (error) {
@@ -176,9 +170,11 @@ export default function Cart({ isOpen, setIsOpen }: CartProps) {
                       <p className="mt-0.5 text-sm text-gray-500">Shipping calculated at checkout.</p>
                       <div className="mt-6 space-y-3">
                         {!user && items.length > 0 && (
-                          <p className="text-sm text-gray-500 text-center">
-                            Please sign in to complete your purchase
-                          </p>
+                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <p className="text-sm text-blue-700 text-center">
+                              💡 You can checkout as a guest or sign in to track your order
+                            </p>
+                          </div>
                         )}
                         <button
                           onClick={handleCheckout}
@@ -195,10 +191,8 @@ export default function Cart({ isOpen, setIsOpen }: CartProps) {
                             </span>
                           ) : items.length === 0 ? (
                             'Cart is Empty'
-                          ) : !user ? (
-                            'Sign in to Checkout'
                           ) : (
-                            'Checkout'
+                            'Proceed to Checkout'
                           )}
                         </button>
                       </div>
